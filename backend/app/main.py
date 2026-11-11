@@ -6,6 +6,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy import text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import OperationalError
 
@@ -45,6 +46,7 @@ logging.basicConfig(
 logger = logging.getLogger("portsync")
 
 _ticker_task: asyncio.Task | None = None
+_BOOTSTRAP_LOCK = 20261
 
 
 @asynccontextmanager
@@ -53,13 +55,20 @@ async def lifespan(app: FastAPI):
     app.state.db_boot_error = None
     db_ready = False
     try:
-        Base.metadata.create_all(bind=engine)
         db = SessionLocal()
         try:
+            if settings.database_url.startswith("postgresql"):
+                # Serverless cold starts can run concurrently; serialize schema
+                # creation and seeding so only one instance does the work.
+                db.execute(text("SELECT pg_advisory_xact_lock(:key)"), {"key": _BOOTSTRAP_LOCK})
+                Base.metadata.create_all(bind=db.connection())
+            else:
+                Base.metadata.create_all(bind=engine)
             seeded = seed_if_empty(db)
             if seeded:
                 logger.info("Seeded deterministic demo dataset (seed=%s)", settings.sim_seed)
             ensure_demo_credentials(db)
+            db.commit()
         finally:
             db.close()
         db_ready = True

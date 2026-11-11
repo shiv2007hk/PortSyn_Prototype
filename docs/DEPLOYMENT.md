@@ -50,7 +50,7 @@ This is the recommended free-tier path for a demo: Vercel (frontend), Render (ba
 
 1. Create a PostgreSQL project.
 2. Copy the **pooled** connection string from the dashboard:
-   - Supabase → **Connect → Pooler** (`...pooler.supabase.com`, user `postgres.<project-ref>`, port `6543`). The direct `db.<project-ref>.supabase.co` host is IPv6-only and unreachable from Vercel.
+   - Supabase → **Connect → Pooler → Transaction pooler** (port `6543`, user `postgres.<project-ref>`). The direct `db.<project-ref>.supabase.co` host is IPv6-only; the session pooler works too but transaction pooling is the right fit for serverless functions.
    - Neon → the string whose host contains `-pooler`.
 3. Optional but recommended for Supabase: run [`supabase-schema.sql`](supabase-schema.sql) in the **SQL Editor**. It creates the 19 tables, indexes, the `alembic_version` head row and enables RLS with no policies on every table. Skipping it is fine — the API creates and seeds the schema on first boot; the file just makes the schema explicit and blocks PostgREST access through anon/authenticated keys.
 4. Use the string as handed out:
