@@ -1,0 +1,2 @@
+# Optional PostgreSQL driver. The API runs on SQLite without it.
+psycopg[binary]==3.2.9

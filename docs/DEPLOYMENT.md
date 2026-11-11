@@ -1,0 +1,177 @@
+# Deployment
+
+PortSync is a two-tier application: a static React/Vite frontend and a FastAPI backend with PostgreSQL (SQLite fallback) and a WebSocket stream.
+
+```
+Browser
+  ├─ HTTPS  /api/*  ─────────────► FastAPI (uvicorn :8010) ──► PostgreSQL
+  └─ WSS    /ws/operations ──────► FastAPI WebSocket hub
+```
+
+Deploy behind the same origin where possible. Same-origin avoids CORS and mixed-content problems, and a single reverse proxy can forward both `/api` and `/ws`.
+
+## Option 1 — Docker Compose (self-hosted)
+
+Prerequisites: Docker Engine 24+ with Compose v2.
+
+```bash
+cp .env.example .env
+# Edit .env: set a strong POSTGRES_PASSWORD, optionally LLM_API_KEY and CORS_ORIGINS
+docker compose up --build
+```
+
+Then open `http://localhost:8080`.
+
+What the stack does:
+
+- `db` — PostgreSQL 16 with a named `pgdata` volume and `pg_isready` health check.
+- `backend` — Python 3.12 image; waits for Postgres, runs `alembic upgrade head`, then starts uvicorn on `:8010`. The API seeds the deterministic demo dataset when the vessel table is empty.
+- `frontend` — multi-stage build (Node 22 → nginx 1.27). nginx serves the SPA with history fallback and proxies `/api` and `/ws` to `backend:8010`.
+
+Useful commands:
+
+```bash
+docker compose logs -f backend
+docker compose exec backend alembic current
+docker compose exec backend alembic upgrade head
+docker compose down            # keep data
+docker compose down -v         # DESTROY the Postgres volume
+```
+
+The Postgres password must be URL-safe because it is interpolated into `DATABASE_URL`. If you need characters such as `@`, `:`, `/` or `%`, set a fully encoded `DATABASE_URL` yourself and adjust the compose environment instead of relying on interpolation.
+
+To run on SQLite inside containers instead, remove the `DATABASE_URL` environment entry and do not start `db`; the default is `sqlite:///backend/portsync.db`, which is **ephemeral unless you mount a volume over `/app`**.
+
+## Option 2 — Managed frontend + backend + database
+
+This is the recommended free-tier path for a demo: Vercel (frontend), Render (backend), Supabase or Neon (PostgreSQL).
+
+### 1. Database (Supabase / Neon)
+
+1. Create a PostgreSQL project.
+2. Copy the connection string. Use the driver-qualified form:
+
+   ```
+   postgresql+psycopg://USER:PASSWORD@HOST:5432/portsync?sslmode=require
+   ```
+
+   URL-encode special characters in the password, or use the provider's encoded connection string.
+
+### 2. Backend (Render Web Service)
+
+- Root directory: `backend`
+- Build command:
+
+  ```bash
+  pip install -r requirements.txt -r requirements-postgres.txt
+  ```
+
+- Start command:
+
+  ```bash
+  alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port $PORT --proxy-headers
+  ```
+
+- Health check path: `/api/health`
+- Environment variables:
+
+  | Variable | Required | Notes |
+  | --- | --- | --- |
+  | `DATABASE_URL` | yes | `postgresql+psycopg://...` |
+  | `CORS_ORIGINS` | yes | Exact frontend origin, e.g. `https://portsync.vercel.app`. Comma-separated, no trailing slash. |
+  | `ENVIRONMENT` | recommended | `production` |
+  | `SIM_ENABLED` | optional | Defaults `true` |
+  | `SIM_TICK_SECONDS` | optional | Defaults `4` |
+  | `SIM_SEED` | optional | Defaults `20261`; changes the synthetic dataset |
+  | `LLM_API_KEY` | optional | Backend-only secret. Leave blank for the rules assistant. |
+  | `LLM_BASE_URL` | optional | Any OpenAI-compatible endpoint |
+  | `LLM_MODEL` | optional | Defaults `gpt-4o-mini` |
+
+Never put `LLM_API_KEY` in a frontend variable or commit a real `.env`.
+
+The initial migration creates the full schema. The app also calls `Base.metadata.create_all` at startup, so a fresh database works even if the migration is skipped — but run `alembic upgrade head` so migration history stays authoritative.
+
+### 3. Frontend (Vercel)
+
+- Framework preset: Vite
+- Root directory: `frontend`
+- Build command: `npm run build`
+- Output directory: `dist`
+- Environment variables (Production and Preview):
+
+  | Variable | Value |
+  | --- | --- |
+  | `VITE_API_URL` | `https://your-backend.onrender.com` |
+  | `VITE_WS_URL` | `wss://your-backend.onrender.com/ws/operations` |
+
+Set both at build time; Vite inlines them. `VITE_API_URL` must be the origin only (no `/api` suffix) because the client appends `/api/...`.
+
+After the frontend URL is known, update the backend `CORS_ORIGINS` and redeploy/restart the API.
+
+The client uses `BrowserRouter`, so the host must fall back to `index.html` for unknown paths (deep links such as `/analytics`). The bundled nginx config already does this. On another static host, add an SPA rewrite/fallback for non-file routes.
+
+### Alternative: same-origin rewrite
+
+Instead of CORS, you can leave `VITE_API_URL` and `VITE_WS_URL` blank and add a reverse proxy / rewrite from the frontend host to the backend (`/api/*` and `/ws/*`). The bundled nginx config is a working example. If you use a CDN rewrite, confirm WebSocket upgrade headers are forwarded, otherwise live updates fall back to manual refresh.
+
+## Environment reference
+
+| Variable | Default | Scope |
+| --- | --- | --- |
+| `ENVIRONMENT` | `development` | Backend |
+| `DATABASE_URL` | `sqlite:///backend/portsync.db` | Backend |
+| `CORS_ORIGINS` | `http://localhost:5173,http://127.0.0.1:5173` | Backend |
+| `SIM_ENABLED` | `true` | Backend |
+| `SIM_TICK_SECONDS` | `4` | Backend |
+| `SIM_SEED` | `20261` | Backend |
+| `LLM_API_KEY` | empty | Backend secret |
+| `LLM_BASE_URL` | `https://api.openai.com/v1` | Backend |
+| `LLM_MODEL` | `gpt-4o-mini` | Backend |
+| `VITE_API_URL` | empty (same origin) | Frontend build |
+| `VITE_WS_URL` | derived from page origin | Frontend build |
+| `POSTGRES_USER` / `POSTGRES_DB` / `POSTGRES_PASSWORD` | none | Compose only |
+
+## Operations
+
+### Seeding and demo reset
+
+- On startup, if `ships` is empty, the API seeds a full deterministic dataset from `SIM_SEED`.
+- Resetting migrations does not reseed automatically until the next startup.
+- The in-app **Reset demo dataset** action posts `/api/system/reset-demo` with `{"confirm":"RESET"}` and restores the baseline. It deletes operational records, so do not expose it to untrusted users.
+
+### Health and monitoring
+
+- `GET /api/health` returns `status`, `database`, environment, tick count and WebSocket client count. Point uptime checks here.
+- `GET /api/system/audit` is the audit trail for accepts, overrides, lifecycle changes, maintenance and simulation apply.
+- The simulator ticker logs each failure with the `portsync.ticker` logger; uvicorn access logs are enabled by default.
+
+### Scaling notes
+
+- The WebSocket hub is in-process. Multiple API replicas will each broadcast only to their own clients. For horizontal scaling, add a shared pub/sub layer (Redis) or use sticky sessions.
+- SQLite with WAL is single-writer oriented; use PostgreSQL for any concurrent deployment.
+- The ticker runs once per process. Running multiple API replicas with `SIM_ENABLED=true` multiplies simulated progress. Keep one simulator owner: either run a single replica or set `SIM_ENABLED=false` on all but one instance.
+
+## Security checklist before public exposure
+
+This prototype ships **without authentication** and is intended for controlled demos.
+
+- Add authentication/authorization at the reverse proxy or API gateway; do not rely on `X-Actor` for access control.
+- Terminate TLS for both HTTPS and WSS.
+- Keep `.env` out of version control; only `.env.example` placeholders belong in the repo.
+- Keep `LLM_API_KEY` on the backend only; rotate it if exposed.
+- Restrict `CORS_ORIGINS` to known frontend origins.
+- Restrict or disable `/api/system/reset-demo` in public environments.
+- Treat the assistant as read-only: it cannot mutate data, and all operational changes still require an explicit operator request through accept/apply endpoints.
+- Keep the synthetic-data labeling visible. No live vessel, GPS or equipment telemetry is used.
+
+## Troubleshooting
+
+| Symptom | Cause / fix |
+| --- | --- |
+| Frontend loads but API calls fail | `VITE_API_URL` missing at build time, or the backend `CORS_ORIGINS` does not include the frontend origin |
+| WebSocket never connects | Proxy is not forwarding `Upgrade` / `Connection` headers; check nginx `/ws/` block or CDN settings |
+| `psycopg` import error | Install `requirements-postgres.txt`; plain `requirements.txt` ships SQLite support only |
+| `alembic upgrade head` cannot connect | Check `DATABASE_URL`, SSL mode and that the database exists |
+| Data disappears after redeploy | Host is using SQLite on ephemeral storage; switch to PostgreSQL or mount a persistent volume |
+| Health score changed unexpectedly | Health weights are operator-editable via `/api/system/health-weights`; reset demo to restore defaults |
+| Assistant says rules mode | `LLM_API_KEY` is blank or the backend has not been restarted after setting it |

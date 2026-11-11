@@ -1,0 +1,11 @@
+fastapi==0.162.4
+uvicorn[standard]==0.54.0
+SQLAlchemy==2.1.8
+pydantic==2.14.3
+pydantic-settings==2.16.2
+alembic==1.20.1
+httpx==0.28.1
+qrcode==8.2
+# Optional: OR-Tools is not required — allocation uses a transparent weighted
+# ranking with hard-constraint gating. Install only if you extend the engine.
+# ortools==9.11.4210
