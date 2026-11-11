@@ -49,13 +49,17 @@ This is the recommended free-tier path for a demo: Vercel (frontend), Render (ba
 ### 1. Database (Supabase / Neon)
 
 1. Create a PostgreSQL project.
-2. Copy the connection string. Use the driver-qualified form:
+2. Copy the **pooled** connection string from the dashboard:
+   - Supabase → **Connect → Pooler** (`...pooler.supabase.com`, user `postgres.<project-ref>`, port `6543`). The direct `db.<project-ref>.supabase.co` host is IPv6-only and unreachable from Vercel.
+   - Neon → the string whose host contains `-pooler`.
+3. Optional but recommended for Supabase: run [`supabase-schema.sql`](supabase-schema.sql) in the **SQL Editor**. It creates the 19 tables, indexes, the `alembic_version` head row and enables RLS with no policies on every table. Skipping it is fine — the API creates and seeds the schema on first boot; the file just makes the schema explicit and blocks PostgREST access through anon/authenticated keys.
+4. Use the string as handed out:
 
    ```
-   postgresql+psycopg://USER:PASSWORD@HOST:5432/portsync?sslmode=require
+   postgresql://postgres.<project-ref>:PASSWORD@<region>.pooler.supabase.com:6543/postgres?sslmode=require
    ```
 
-   URL-encode special characters in the password, or use the provider's encoded connection string.
+   The backend rewrites it to the psycopg driver form automatically. URL-encode special characters in the password, or use the provider's encoded connection string.
 
 ### 2. Backend (Render Web Service)
 
@@ -152,7 +156,7 @@ Setup:
 
 1. Import the repo into Vercel with the **repository root** as the Root Directory (not `frontend/`).
 2. Set environment variables (Project → Settings → Environment Variables):
-   - `DATABASE_URL` — **required**: an external PostgreSQL URL using the provider's pooled endpoint (Neon, Supabase, etc.), e.g. `postgresql+psycopg://USER:PASSWORD@HOST:5432/portsync?sslmode=require`. SQLite does not persist on Vercel; a plain `postgresql://` URL is qualified automatically.
+   - `DATABASE_URL` — **required**: the provider's **pooled** PostgreSQL URL (Supabase port `6543`, Neon `-pooler` host), e.g. `postgresql://postgres.<ref>:PASSWORD@<region>.pooler.supabase.com:6543/postgres?sslmode=require`. SQLite does not persist on Vercel; a plain `postgresql://` URL is qualified automatically. See [`supabase-schema.sql`](supabase-schema.sql) for the optional one-shot schema.
    - `ENVIRONMENT=production`
    - Optional: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `SIM_ENABLED`, `SIM_TICK_SECONDS`, `SIM_SEED`, `SEED_DEMO_USERS`, `DEMO_PASSWORD`.
 3. Deploy. Leave `VITE_API_URL` and `VITE_WS_URL` unset — routing is same-origin.
