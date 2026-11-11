@@ -2,6 +2,8 @@
 
 **One Port. Every Resource. Intelligent Operations.**
 
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shiv2007hk/PortSyn_Prototype)
+
 PortSync is a production-style smart port operations platform delivered as three connected experiences: a cinematic public website with a live tracking widget, a split-screen login/signup flow backed by real session authentication, and a dense operator workspace with a live operations dashboard, interactive digital twin, explainable resource allocation, container lifecycle, warehouse and dispatch control, what-if simulation, rule-based predictive maintenance and a grounded read-only assistant.
 
 Every vessel schedule, position, container movement, crane, truck and sensor value is **synthetic simulator output**. No live AIS, GPS or equipment telemetry is ingested. The UI, API responses and assistant all label this explicitly.
@@ -226,6 +228,8 @@ docker compose up --build
 ```
 
 Managed deployment (Vercel + Render + Supabase/Neon), CORS, WebSocket proxying, environment variables and troubleshooting: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
+One-click Render Blueprint (Postgres + FastAPI + static frontend): click **Deploy to Render** at the top of this README, or use Dashboard → **New +** → **Blueprint** → this repo. It provisions `portsync-db`, `portsync-api` and `portsync-web` from [`render.yaml`](render.yaml); use the **Blueprint** flow (not "Web Service"), since plain web services do not read `render.yaml`. For a Vercel frontend, import the repo with **Root Directory** set to `frontend` and the `VITE_API_URL` / `VITE_WS_URL` variables from that doc.
 
 ## Security and operating constraints
 
