@@ -108,7 +108,7 @@ Set both at build time; Vite inlines them. `VITE_API_URL` must be the origin onl
 
 After the frontend URL is known, update the backend `CORS_ORIGINS` and redeploy/restart the API.
 
-The client uses `BrowserRouter`, so the host must fall back to `index.html` for unknown paths (deep links such as `/analytics`). The bundled nginx config already does this, and the bundled `frontend/vercel.json` adds the equivalent rewrite on Vercel. On another static host, add an SPA rewrite/fallback for non-file routes.
+The client uses `BrowserRouter`, so the host must fall back to `index.html` for unknown paths (deep links such as `/analytics`). The bundled nginx config already does this; in Option 4 the root `vercel.json` handles it inside the frontend service. For a standalone Vercel project (this option), add a rewrite to `/index.html`. On another static host, add an SPA rewrite/fallback for non-file routes.
 
 ### Alternative: same-origin rewrite
 
@@ -136,6 +136,35 @@ Blueprint behavior worth knowing:
 - Service URLs are derived from service names (`portsync-api` / `portsync-web`). If Render appends a random suffix because a name is taken, update `CORS_ORIGINS` on the API and `VITE_API_URL` / `VITE_WS_URL` on the static site, then redeploy both.
 - `LLM_API_KEY` is intentionally not set — add it (and optionally `LLM_BASE_URL` / `LLM_MODEL`) in the dashboard to leave rules mode.
 - Free web services spin down after ~15 minutes of inactivity; the first request after that pays a cold start.
+
+## Option 4 — Vercel Services (frontend + API in one Vercel project)
+
+`vercel.json` at the repo root deploys both tiers as a single Vercel project using [Vercel Services](https://vercel.com/docs/services):
+
+| Service | Root | Runtime | Public path |
+| --- | --- | --- | --- |
+| `portsync-api` | `backend/` | FastAPI (`app.main:app`, Python 3.12) | `/api/*` and `/ws/*` |
+| `portsync-web` | `frontend/` | Vite static build | everything else |
+
+No service bindings are needed: the frontend is a static build that calls the API from the browser over the public `/api` path (a binding only injects internal URLs into server-side functions). The SPA fallback lives in the frontend service's own rewrite rule, so the service names and public paths can be changed in one place.
+
+Setup:
+
+1. Import the repo into Vercel with the **repository root** as the Root Directory (not `frontend/`).
+2. Set environment variables (Project → Settings → Environment Variables):
+   - `DATABASE_URL` — **required**: an external PostgreSQL URL using the provider's pooled endpoint (Neon, Supabase, etc.), e.g. `postgresql+psycopg://USER:PASSWORD@HOST:5432/portsync?sslmode=require`. SQLite does not persist on Vercel; a plain `postgresql://` URL is qualified automatically.
+   - `ENVIRONMENT=production`
+   - Optional: `LLM_API_KEY`, `LLM_BASE_URL`, `LLM_MODEL`, `SIM_ENABLED`, `SIM_TICK_SECONDS`, `SIM_SEED`, `SEED_DEMO_USERS`, `DEMO_PASSWORD`.
+3. Deploy. Leave `VITE_API_URL` and `VITE_WS_URL` unset — routing is same-origin.
+
+Serverless behavior worth knowing:
+
+- Every cold start runs the FastAPI lifespan: `Base.metadata.create_all`, demo seeding and demo credentials. `alembic upgrade head` is not run automatically — run it from your machine against the hosted database for schema changes.
+- WebSocket connections are pinned to one function instance and close at the function duration limit. The client reconnects with exponential backoff and falls back to 15-second polling while offline, so the twin recovers.
+- The WebSocket hub and simulator ticker are in-process: with `SIM_ENABLED=true`, each warm instance advances its own ticker and broadcasts only to clients pinned to that instance. HTTP data stays consistent (Postgres). For one deterministic demo clock, set `SIM_ENABLED=false` on Vercel.
+- WebSockets require Fluid compute, which is the default for projects created after April 23, 2025.
+
+Local development: `npx vercel dev --local` runs both services together without authenticating with Vercel.
 
 ## Environment reference
 

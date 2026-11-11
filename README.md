@@ -229,7 +229,7 @@ docker compose up --build
 
 Managed deployment (Vercel + Render + Supabase/Neon), CORS, WebSocket proxying, environment variables and troubleshooting: [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
 
-One-click Render Blueprint (Postgres + FastAPI + static frontend): click **Deploy to Render** at the top of this README, or use Dashboard → **New +** → **Blueprint** → this repo. It provisions `portsync-db`, `portsync-api` and `portsync-web` from [`render.yaml`](render.yaml); use the **Blueprint** flow (not "Web Service"), since plain web services do not read `render.yaml`. For a Vercel frontend, import the repo with **Root Directory** set to `frontend` and the `VITE_API_URL` / `VITE_WS_URL` variables from that doc.
+One-click Render Blueprint (Postgres + FastAPI + static frontend): click **Deploy to Render** at the top of this README, or use Dashboard → **New +** → **Blueprint** → this repo. It provisions `portsync-db`, `portsync-api` and `portsync-web` from [`render.yaml`](render.yaml); use the **Blueprint** flow (not "Web Service"), since plain web services do not read `render.yaml`. For Vercel, either import the repo with **Root Directory** `frontend` and the `VITE_API_URL` / `VITE_WS_URL` variables (API on Render), or deploy both tiers in one Vercel project via Vercel Services (root [`vercel.json`](vercel.json), repo root as Root Directory, no `VITE_*` variables needed) — see Option 2 and Option 4 in that doc.
 
 ## Security and operating constraints
 
