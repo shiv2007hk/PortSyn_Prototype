@@ -114,6 +114,29 @@ The client uses `BrowserRouter`, so the host must fall back to `index.html` for 
 
 Instead of CORS, you can leave `VITE_API_URL` and `VITE_WS_URL` blank and add a reverse proxy / rewrite from the frontend host to the backend (`/api/*` and `/ws/*`). The bundled nginx config is a working example. If you use a CDN rewrite, confirm WebSocket upgrade headers are forwarded, otherwise live updates fall back to manual refresh.
 
+## Option 3 — Render Blueprint (everything on Render)
+
+`render.yaml` at the repo root is a [Blueprint](https://render.com/docs/blueprint-spec) that provisions the whole stack in one step:
+
+| Resource | Type | Notes |
+| --- | --- | --- |
+| `portsync-db` | Render Postgres | Free plan (expires 30 days after creation), PG 16, `portsync` database/user |
+| `portsync-api` | Web service (Python) | Installs both requirements files, runs `alembic upgrade head`, serves uvicorn on `$PORT`; health check `/api/health` |
+| `portsync-web` | Static site | `npm ci && npm run build`, publishes `dist/`, SPA rewrite to `index.html` |
+
+To deploy:
+
+1. Push this repo (with `render.yaml`) to GitHub.
+2. Render Dashboard → **New +** → **Blueprint** → select the repo → **Apply**.
+
+Blueprint behavior worth knowing:
+
+- `DATABASE_URL` is wired from the database's internal connection string; `app.core.config` qualifies `postgresql://` to `postgresql+psycopg://` automatically, so the provider's URL works as-is.
+- Session cookies are sent with `SameSite=None; Secure` when `ENVIRONMENT=production`, because two `*.onrender.com` subdomains are cross-site (the domain is on the Public Suffix List) and a `Lax` cookie would never reach the API.
+- Service URLs are derived from service names (`portsync-api` / `portsync-web`). If Render appends a random suffix because a name is taken, update `CORS_ORIGINS` on the API and `VITE_API_URL` / `VITE_WS_URL` on the static site, then redeploy both.
+- `LLM_API_KEY` is intentionally not set — add it (and optionally `LLM_BASE_URL` / `LLM_MODEL`) in the dashboard to leave rules mode.
+- Free web services spin down after ~15 minutes of inactivity; the first request after that pays a cold start.
+
 ## Environment reference
 
 | Variable | Default | Scope |

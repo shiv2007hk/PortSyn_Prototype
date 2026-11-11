@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 BASE_DIR = Path(__file__).resolve().parents[2]
@@ -12,6 +13,15 @@ class Settings(BaseSettings):
     app_name: str = "PortSync API"
     environment: str = "development"
     database_url: str = DEFAULT_DB
+
+    @field_validator("database_url", mode="before")
+    @classmethod
+    def _qualify_psycopg_driver(cls, value: str) -> str:
+        # Managed Postgres providers (Render, Supabase, Neon) hand out
+        # postgresql:// URLs, but only the psycopg 3 driver is installed.
+        if value.startswith("postgresql://"):
+            return "postgresql+psycopg://" + value.removeprefix("postgresql://")
+        return value
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

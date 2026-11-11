@@ -51,14 +51,18 @@ def set_session_cookie(response: Response, request: Request, token: str, remembe
         value=token,
         httponly=True,
         secure=secure,
-        samesite="lax",
+        # Hosted frontends live on a separate origin (e.g. *.onrender.com,
+        # which the Public Suffix List puts cross-site), so a Lax cookie would
+        # never reach the API. SameSite=None requires Secure.
+        samesite="none" if secure else "lax",
         path="/",
         max_age=settings.remember_days * 24 * 3600 if remember else None,
     )
 
 
 def clear_session_cookie(response: Response) -> None:
-    response.delete_cookie(key=settings.session_cookie_name, path="/", samesite="lax")
+    production = settings.environment.lower() in ("production", "staging")
+    response.delete_cookie(key=settings.session_cookie_name, path="/", samesite="none" if production else "lax")
 
 
 def current_session(db: Session, request: Request) -> AuthSession | None:
