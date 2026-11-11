@@ -16,12 +16,18 @@ class Settings(BaseSettings):
 
     @field_validator("database_url", mode="before")
     @classmethod
-    def _qualify_psycopg_driver(cls, value: str) -> str:
+    def _normalize_database_url(cls, value: str) -> str:
+        if not isinstance(value, str):
+            return value
+        # Env values pasted from dashboards sometimes arrive wrapped in quotes
+        # or with a trailing newline; both break create_engine at import time.
+        url = value.strip().strip('"').strip("'")
         # Managed Postgres providers (Render, Supabase, Neon) hand out
-        # postgresql:// URLs, but only the psycopg 3 driver is installed.
-        if value.startswith("postgresql://"):
-            return "postgresql+psycopg://" + value.removeprefix("postgresql://")
-        return value
+        # postgresql:// or postgres:// URLs, but only the psycopg 3 driver is installed.
+        for prefix in ("postgresql://", "postgres://"):
+            if url.startswith(prefix):
+                return "postgresql+psycopg://" + url.removeprefix(prefix)
+        return url
 
     cors_origins: str = "http://localhost:5173,http://127.0.0.1:5173"
 

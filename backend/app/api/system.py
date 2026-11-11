@@ -1,7 +1,9 @@
 import logging
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy import text
+from sqlalchemy.engine import make_url
 from sqlalchemy.orm import Session
 
 from app.api.common import current_actor, notify, paginate, public_user
@@ -34,16 +36,26 @@ def audit_out(row: AuditLog) -> dict:
     }
 
 
+def _redact(message: str) -> str:
+    return re.sub(r"(?i)(password|passwd|pwd)=\S+", r"\1=***", message)[:400]
+
+
 @router.get("/health")
-def health_check(db: Session = Depends(get_db)):
+def health_check(request: Request, db: Session = Depends(get_db)):
+    boot_error = getattr(request.app.state, "db_boot_error", None)
+    error = None
     try:
         db.execute(text("SELECT 1"))
         db_ok = True
-    except Exception:  # pragma: no cover - defensive
+    except Exception as exc:  # pragma: no cover - defensive
         db_ok = False
+        error = f"{type(exc).__name__}: {exc}"
+    url = make_url(settings.database_url)
     return {
         "status": "ok" if db_ok else "degraded",
         "database": "connected" if db_ok else "unavailable",
+        "database_target": f"{url.drivername}://{url.host or 'local'}/{url.database or ''}",
+        "detail": _redact(boot_error or error) if (boot_error or error) else None,
         "environment": settings.environment,
         "sim_tick": ticker.tick_count(),
         "ws_clients": len(manager.active),

@@ -222,8 +222,9 @@ This prototype ships **without authentication** and is intended for controlled d
 | --- | --- |
 | Frontend loads but API calls fail | `VITE_API_URL` missing at build time, or the backend `CORS_ORIGINS` does not include the frontend origin |
 | WebSocket never connects | Proxy is not forwarding `Upgrade` / `Connection` headers; check nginx `/ws/` block or CDN settings |
-| `psycopg` import error | Install `requirements-postgres.txt`; plain `requirements.txt` ships SQLite support only |
+| `psycopg` import error | Reinstall from `requirements.txt` (it pins `psycopg[binary]`) and redeploy |
 | `alembic upgrade head` cannot connect | Check `DATABASE_URL`, SSL mode and that the database exists |
+| Login or any API call returns `500` / `503` | The API cannot reach its database. Open `/api/health`: `database_target` shows the host in use and `detail` the connection error. On Vercel set `DATABASE_URL` to Neon's **pooled** connection string (`-pooler` host, `?sslmode=require`; the direct host is IPv6-only), then redeploy so the variable takes effect |
 | Data disappears after redeploy | Host is using SQLite on ephemeral storage; switch to PostgreSQL or mount a persistent volume |
 | Health score changed unexpectedly | Health weights are operator-editable via `/api/system/health-weights`; reset demo to restore defaults |
 | Assistant says rules mode | `LLM_API_KEY` is blank or the backend has not been restarted after setting it |

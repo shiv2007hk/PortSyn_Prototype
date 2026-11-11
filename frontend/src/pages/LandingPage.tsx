@@ -26,7 +26,6 @@ import { cn } from "@/lib/format";
 import { LogoMark } from "@/components/layout/Logo";
 import { ShipScene } from "@/components/landing/ShipScene";
 import { FeatureOrbit } from "@/components/landing/FeatureOrbit";
-import { TrackingWidget } from "@/components/landing/TrackingWidget";
 import { CountUp, Reveal, useScrollFlag } from "@/components/landing/Reveal";
 
 const NAV = [
@@ -194,8 +193,8 @@ function Hero() {
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(5,15,26,0.96)_0%,rgba(5,15,26,0.72)_30%,rgba(5,15,26,0.38)_52%,rgba(5,15,26,0.08)_74%,transparent_100%)]" />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#050f1a]/80 to-transparent" />
 
-      <div className="landing-wrap relative z-10 grid items-center gap-12 px-5 pb-24 pt-10 sm:px-8 lg:grid-cols-[1.1fr_0.9fr] lg:px-12 lg:pb-32">
-        <div>
+      <div className="landing-wrap relative z-10 px-5 pb-24 pt-10 sm:px-8 lg:px-12 lg:pb-32">
+        <div className="max-w-[760px]">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 backdrop-blur-md">
             <span className="status-dot bg-[#26B7D3] animate-pulse-dot" />
             <span className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-[#B6DFEE]">Smart port operations platform</span>
@@ -235,10 +234,6 @@ function Hero() {
             <span className="h-1 w-1 rounded-full bg-[#26B7D3]/70" />
             <span>Audited operations</span>
           </div>
-        </div>
-
-        <div className="lg:justify-self-end">
-          <TrackingWidget />
         </div>
       </div>
 

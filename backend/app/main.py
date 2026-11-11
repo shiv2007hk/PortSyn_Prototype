@@ -6,6 +6,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from sqlalchemy.engine import make_url
+from sqlalchemy.exc import OperationalError
 
 from app.api import (
     alerts,
@@ -48,20 +50,31 @@ _ticker_task: asyncio.Task | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _ticker_task
-    Base.metadata.create_all(bind=engine)
-    db = SessionLocal()
+    app.state.db_boot_error = None
+    db_ready = False
     try:
-        seeded = seed_if_empty(db)
-        if seeded:
-            logger.info("Seeded deterministic demo dataset (seed=%s)", settings.sim_seed)
-        ensure_demo_credentials(db)
-    finally:
-        db.close()
+        Base.metadata.create_all(bind=engine)
+        db = SessionLocal()
+        try:
+            seeded = seed_if_empty(db)
+            if seeded:
+                logger.info("Seeded deterministic demo dataset (seed=%s)", settings.sim_seed)
+            ensure_demo_credentials(db)
+        finally:
+            db.close()
+        db_ready = True
+    except Exception as exc:
+        app.state.db_boot_error = f"{type(exc).__name__}: {exc}"
+        logger.exception(
+            "Database bootstrap failed — starting in degraded mode. "
+            "Set DATABASE_URL to a reachable PostgreSQL URL (on Vercel use the pooled Neon connection string)."
+        )
 
     manager.loop = asyncio.get_running_loop()
-    if settings.sim_enabled:
+    if settings.sim_enabled and db_ready:
         _ticker_task = asyncio.create_task(ticker.ticker_loop())
-    logger.info("PortSync API ready · env=%s · db=%s", settings.environment, settings.database_url.split("///")[-1])
+    _url = make_url(settings.database_url)
+    logger.info("PortSync API ready · env=%s · db=%s://%s/%s", settings.environment, _url.drivername, _url.host or "local", _url.database or "")
     try:
         yield
     finally:
@@ -111,6 +124,20 @@ async def log_requests(request: Request, call_next):
 @app.exception_handler(AllocationError)
 async def allocation_error_handler(request: Request, exc: AllocationError):
     return JSONResponse(status_code=409, content={"detail": str(exc)})
+
+
+@app.exception_handler(OperationalError)
+async def database_unavailable_handler(request: Request, exc: OperationalError):
+    logger.error("Database error on %s %s: %s", request.method, request.url.path, exc)
+    return JSONResponse(
+        status_code=503,
+        content={
+            "detail": (
+                "Database unavailable. The API could not reach its database — "
+                "check the DATABASE_URL setting on the deployment."
+            )
+        },
+    )
 
 
 @app.exception_handler(ValueError)

@@ -4,13 +4,13 @@
 
 [![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/shiv2007hk/PortSyn_Prototype)
 
-PortSync is a production-style smart port operations platform delivered as three connected experiences: a cinematic public website with a live tracking widget, a split-screen login/signup flow backed by real session authentication, and a dense operator workspace with a live operations dashboard, interactive digital twin, explainable resource allocation, container lifecycle, warehouse and dispatch control, what-if simulation, rule-based predictive maintenance and a grounded read-only assistant.
+PortSync is a production-style smart port operations platform delivered as three connected experiences: a cinematic public website, a split-screen login/signup flow backed by real session authentication, and a dense operator workspace with a live operations dashboard, interactive digital twin, explainable resource allocation, container lifecycle, warehouse and dispatch control, what-if simulation, rule-based predictive maintenance and a grounded read-only assistant.
 
 Every vessel schedule, position, container movement, crane, truck and sensor value is **synthetic simulator output**. No live AIS, GPS or equipment telemetry is ingested. The UI, API responses and assistant all label this explicitly.
 
 ## Highlights
 
-- **Public website (`/`)** — cinematic maritime hero with an animated cargo vessel, drifting wave bands and parallax port, sticky navigation, floating container/vessel/schedule tracking widget backed by the public API, capability showcase, digital twin preview, allocation workflow, what-if simulation and operational-impact sections. Full light/dark theming and `prefers-reduced-motion` support.
+- **Public website (`/`)** — cinematic maritime hero with an animated cargo vessel, drifting wave bands and parallax port, sticky navigation, capability showcase, digital twin preview, allocation workflow, what-if simulation and operational-impact sections. Full light/dark theming and `prefers-reduced-motion` support.
 - **Authentication (`/login`, `/signup`)** — real server sessions with HttpOnly cookies, CSRF-protected mutations and hashed passwords. Signup validation, password strength meter, show/hide password, remember-me, duplicate-email and wrong-password error states. New accounts are read-only viewers; no public signup can create an administrative account.
 - **Operator workspace (`/app`)** — collapsible sidebar with the 10 operational modules, command topbar (global search, alerts, connection state, theme, session menu) and a master-detail layout with contextual detail rails, compact KPIs and audited mutations.
 - **Live dashboard** — 10 KPIs, transparent/configurable health score, activity feed, queue and berth overview, 7-day series.
@@ -195,7 +195,7 @@ The backend suite covers health, login/signup/session policy, CSRF rejection, vi
 
 ## Demo walkthrough
 
-0. **Public site** — watch the cargo vessel cross the hero water, try the tracking widget with `CONT-0001` or `SH-104` (labels itself as demonstration data), then open **Login**.
+0. **Public site** — watch the cargo vessel cross the hero water, explore the capability sections, then open **Login**.
 1. **Sign in** with `priya.menon@portsync.demo` / `PortSync2026!` (or create a read-only account via **Signup** to see server-enforced viewer permissions).
 2. **Reset** from the top bar to restore the deterministic baseline.
 3. **Overview** — inspect the 10 KPIs; open **Configure health weights** and change the weighting. The score recomputes from components, not a hidden model.
