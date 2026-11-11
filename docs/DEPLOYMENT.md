@@ -108,7 +108,7 @@ Set both at build time; Vite inlines them. `VITE_API_URL` must be the origin onl
 
 After the frontend URL is known, update the backend `CORS_ORIGINS` and redeploy/restart the API.
 
-The client uses `BrowserRouter`, so the host must fall back to `index.html` for unknown paths (deep links such as `/analytics`). The bundled nginx config already does this. On another static host, add an SPA rewrite/fallback for non-file routes.
+The client uses `BrowserRouter`, so the host must fall back to `index.html` for unknown paths (deep links such as `/analytics`). The bundled nginx config already does this, and the bundled `frontend/vercel.json` adds the equivalent rewrite on Vercel. On another static host, add an SPA rewrite/fallback for non-file routes.
 
 ### Alternative: same-origin rewrite
 
