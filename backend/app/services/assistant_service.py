@@ -7,6 +7,7 @@ is strictly read-only — it can recommend, never execute.
 """
 
 import logging
+import os
 import re
 
 import httpx
@@ -307,7 +308,11 @@ def _llm_answer(db: Session, message: str, history: list[dict], facts: dict) -> 
         }
     )
     try:
-        with httpx.Client(timeout=25) as client:
+        # trust_env=False: httpx's NO_PROXY parsing crashes on IPv6 entries like
+        # [::1] (Invalid port ':1]') and would kill every call. The proxy, if any,
+        # is honoured explicitly via HTTPS_PROXY below.
+        proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
+        with httpx.Client(timeout=25, proxy=proxy, trust_env=False) as client:
             response = client.post(
                 f"{settings.llm_base_url.rstrip('/')}/chat/completions",
                 headers={"Authorization": f"Bearer {settings.llm_api_key}"},
