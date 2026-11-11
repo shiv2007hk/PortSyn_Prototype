@@ -24,8 +24,8 @@ import {
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/format";
 import { LogoMark } from "@/components/layout/Logo";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { ShipScene } from "@/components/landing/ShipScene";
+import { FeatureOrbit } from "@/components/landing/FeatureOrbit";
 import { TrackingWidget } from "@/components/landing/TrackingWidget";
 import { CountUp, Reveal, useScrollFlag } from "@/components/landing/Reveal";
 
@@ -130,7 +130,6 @@ function NavBar() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle label={false} className="h-8 w-8 justify-center border-transparent bg-transparent px-0 hover:bg-white/10" />
           <Link
             to={user ? "/app" : "/login"}
             className={cn(
@@ -462,6 +461,29 @@ function Capabilities() {
             </Reveal>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+function Orbit() {
+  return (
+    <section className="landing-section bg-ink-900">
+      <div className="landing-wrap">
+        <Reveal className="max-w-2xl">
+          <SectionLabel>One operating picture</SectionLabel>
+          <h2 className="editorial-title mt-5 text-[34px] text-slate-50 sm:text-[44px]">
+            Every capability,
+            <span className="block text-slate-400">one shared core.</span>
+          </h2>
+          <p className="mt-5 max-w-[48ch] text-[13.5px] leading-relaxed text-slate-400">
+            All ten modules read and write the same live model of the terminal. Nothing is duplicated, nothing drifts out of
+            sync — each capability orbits the port's single source of truth.
+          </p>
+        </Reveal>
+        <Reveal delay={120} className="mt-12">
+          <FeatureOrbit features={FEATURES} />
+        </Reveal>
       </div>
     </section>
   );
@@ -877,6 +899,7 @@ export function LandingPage() {
       <Marquee />
       <About />
       <Capabilities />
+      <Orbit />
       <TwinShowcase />
       <Allocation />
       <Simulation />

@@ -262,7 +262,7 @@ export function AlertsMaintenancePage() {
                           </div>
                           <p className="mt-0.5 text-[11.5px] leading-relaxed text-slate-500">{alert.message}</p>
                           <div className="mt-1 flex flex-wrap items-center gap-2 font-mono text-3xs text-slate-600">
-                            {alert.entity_code ? <span className="rounded border border-line bg-white/[0.03] px-1 py-px">{alert.entity_code}</span> : null}
+                            {alert.entity_code ? <span className="rounded border border-line bg-ink-700 px-1 py-px">{alert.entity_code}</span> : null}
                             <span>source {alert.source}</span>
                             <span>·</span>
                             <span>{fmtAgo(alert.created_at)}</span>

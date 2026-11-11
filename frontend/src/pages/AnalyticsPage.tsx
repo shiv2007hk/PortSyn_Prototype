@@ -153,7 +153,7 @@ export function AnalyticsPage() {
                       <span className="truncate text-slate-500">{component.label}</span>
                       <span className="font-mono text-slate-300">{component.value.toFixed(0)}</span>
                     </div>
-                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                    <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-ink-600">
                       <div className="h-full rounded-full bg-signal-cyan/80" style={{ width: `${Math.max(2, component.value)}%` }} />
                     </div>
                   </div>

@@ -380,7 +380,7 @@ export function ContainersPage() {
                       <span className={cn("h-1.5 w-1.5 rounded-full", column.accent)} />
                       <span className="font-display text-[12px] font-medium text-slate-200">{column.label}</span>
                     </span>
-                    <span className="rounded bg-white/[0.05] px-1.5 py-px font-mono text-3xs tabular-nums text-slate-400">{data?.count ?? 0}</span>
+                    <span className="rounded bg-ink-700 px-1.5 py-px font-mono text-3xs tabular-nums text-slate-400">{data?.count ?? 0}</span>
                   </div>
                   <p className="mt-0.5 text-[10px] text-slate-600">{column.hint}</p>
                 </div>

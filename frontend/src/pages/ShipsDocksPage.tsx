@@ -167,7 +167,7 @@ function BerthMiniMap({ currentDock }: { currentDock?: string | null }) {
                 )}
               >
                 <div className="font-mono text-[10px] text-slate-300">{dock.code}</div>
-                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-white/[0.06]">
+                <div className="mt-1 h-1.5 overflow-hidden rounded-sm bg-ink-600">
                   <div className={cn("h-full rounded-sm", dock.ship ? "w-full bg-cyan-400/70" : "w-1/3 bg-emerald-400/40")} />
                 </div>
                 <div className="mt-1 truncate font-mono text-[8px] uppercase tracking-[0.04em] text-slate-600">{dock.ship?.code ?? dock.status}</div>

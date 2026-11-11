@@ -241,7 +241,7 @@ export function OverviewPage() {
                           <span className="ml-1 text-slate-600">×{(component.weight * 100).toFixed(0)}%</span>
                         </span>
                       </div>
-                      <div className="mt-1 h-1 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className="mt-1 h-1 overflow-hidden rounded-full bg-ink-600">
                         <div
                           className={cn(
                             "h-full rounded-full",
@@ -316,7 +316,7 @@ export function OverviewPage() {
                       <div className="flex items-center gap-2">
                         <span className="truncate text-[12.5px] font-medium text-slate-200">{event.title}</span>
                         {event.entity_code ? (
-                          <span className="shrink-0 rounded border border-line bg-white/[0.03] px-1 py-px font-mono text-3xs text-slate-500">
+                          <span className="shrink-0 rounded border border-line bg-ink-700 px-1 py-px font-mono text-3xs text-slate-500">
                             {event.entity_code}
                           </span>
                         ) : null}
@@ -341,7 +341,7 @@ export function OverviewPage() {
                     <span className="text-slate-400">{row.name}</span>
                     <span className="font-mono tabular-nums text-slate-200">{row.value.toFixed(1)}%</span>
                   </div>
-                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-ink-600">
                     <div
                       className={cn(
                         "h-full rounded-full",
@@ -434,12 +434,12 @@ export function OverviewPage() {
                       <span className={cn("ml-1.5", warehouse.above_threshold ? "text-amber-300" : "text-slate-600")}>{warehouse.utilization}%</span>
                     </span>
                   </div>
-                  <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-white/[0.06]">
+                  <div className="relative mt-1.5 h-2 overflow-hidden rounded-full bg-ink-600">
                     <div
                       className={cn("h-full rounded-full", warehouse.utilization >= 95 ? "bg-red-400" : warehouse.above_threshold ? "bg-amber-400" : "bg-emerald-400")}
                       style={{ width: `${warehouse.utilization}%` }}
                     />
-                    <span className="absolute inset-y-0 w-px bg-white/40" style={{ left: `${warehouse.threshold}%` }} />
+                    <span className="absolute inset-y-0 w-px bg-slate-400" style={{ left: `${warehouse.threshold}%` }} />
                   </div>
                   <div className="mt-1 font-mono text-3xs uppercase tracking-[0.06em] text-slate-600">
                     {warehouse.available} TEU free · alert at {warehouse.threshold}%

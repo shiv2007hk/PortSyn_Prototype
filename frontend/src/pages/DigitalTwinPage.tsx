@@ -174,7 +174,7 @@ function DetailPanel({ selection, twin }: { selection: Selection; twin: TwinStat
               <span className="text-slate-500">Discharge</span>
               <span className="font-mono text-slate-300">{ship.progress.toFixed(0)}%</span>
             </div>
-            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+            <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-ink-600">
               <div className="h-full rounded-full bg-signal-cyan" style={{ width: `${ship.progress}%` }} />
             </div>
           </div>
@@ -234,7 +234,7 @@ function DetailPanel({ selection, twin }: { selection: Selection; twin: TwinStat
           <Row label="Occupancy" value={`${warehouse.occupancy} / ${warehouse.capacity_teu} TEU`} />
           <Row label="Available" value={`${warehouse.available} TEU`} />
           <Row label="Threshold" value={`${warehouse.threshold}%`} />
-          <div className="h-1.5 overflow-hidden rounded-full bg-white/[0.06]">
+          <div className="h-1.5 overflow-hidden rounded-full bg-ink-600">
             <div className={cn("h-full rounded-full", warehouse.utilization >= 95 ? "bg-red-400" : warehouse.above_threshold ? "bg-amber-400" : "bg-emerald-400")} style={{ width: `${warehouse.utilization}%` }} />
           </div>
         </div>

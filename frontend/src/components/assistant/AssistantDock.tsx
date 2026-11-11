@@ -108,7 +108,7 @@ export function AssistantDock() {
             <button
               type="button"
               onClick={() => setOpen(false)}
-              className="rounded p-1 text-slate-500 hover:bg-white/[0.06] hover:text-slate-200"
+              className="rounded p-1 text-slate-500 hover:bg-ink-700 hover:text-slate-200"
               aria-label="Close assistant"
             >
               <X size={16} />

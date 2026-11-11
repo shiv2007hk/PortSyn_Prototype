@@ -15,20 +15,6 @@
       href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Sans:wght@400;500;600;700&family=Inter:wght@400;450;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <script>
-      (function () {
-        try {
-          var stored = localStorage.getItem("portsync-theme");
-          var dark = stored ? stored === "dark" : window.matchMedia("(prefers-color-scheme: dark)").matches;
-          document.documentElement.classList.toggle("dark", dark);
-          document.documentElement.style.colorScheme = dark ? "dark" : "light";
-          var meta = document.querySelector('meta[name="theme-color"]');
-          if (meta) meta.setAttribute("content", dark ? "#07111F" : "#F4F8FB");
-        } catch (error) {
-          /* theme falls back to the light default */
-        }
-      })();
-    </script>
     <title>PortSync · One Port. Every Resource. Intelligent Operations.</title>
   </head>
   <body>

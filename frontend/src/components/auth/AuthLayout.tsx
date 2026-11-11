@@ -3,7 +3,6 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/format";
 import { LogoMark } from "@/components/layout/Logo";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { AuthScene } from "./AuthScene";
 
 export function AuthLayout({
@@ -31,7 +30,6 @@ export function AuthLayout({
           >
             <ArrowLeft size={13} /> Home
           </Link>
-          <ThemeToggle label={false} className="h-9 w-9 justify-center px-0" />
         </div>
 
         <div className="flex flex-1 items-center justify-center px-5 py-14 sm:px-8">

@@ -383,9 +383,9 @@ export function WarehouseDispatchPage() {
                         <span className="text-slate-400">Occupancy</span>
                         <span className="font-mono tabular-nums text-slate-200">{warehouse.occupancy}/{warehouse.capacity_teu} TEU <span className={cn("ml-1.5", warehouse.above_threshold ? "text-amber-300" : "text-slate-600")}>{warehouse.utilization}%</span></span>
                       </div>
-                      <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-white/[0.06]">
+                      <div className="relative mt-1.5 h-2.5 overflow-hidden rounded-full bg-ink-600">
                         <div className={cn("h-full rounded-full", warehouse.utilization >= 95 ? "bg-red-400" : warehouse.above_threshold ? "bg-amber-400" : "bg-emerald-400")} style={{ width: `${warehouse.utilization}%` }} />
-                        <span className="absolute inset-y-0 w-px bg-white/50" style={{ left: `${warehouse.threshold}%` }} />
+                        <span className="absolute inset-y-0 w-px bg-slate-400" style={{ left: `${warehouse.threshold}%` }} />
                       </div>
                       <div className="mt-1 flex justify-between font-mono text-3xs uppercase tracking-[0.06em] text-slate-600">
                         <span>{warehouse.available} TEU free</span>

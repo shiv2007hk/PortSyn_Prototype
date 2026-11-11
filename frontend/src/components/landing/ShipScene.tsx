@@ -97,11 +97,26 @@ export function ShipScene({ className = "" }: { className?: string }) {
           </g>
         </g>
 
-        {/* distant vessel on the horizon */}
+        {/* distant vessel drifting the opposite way on the horizon */}
         <g opacity="0.4" fill="#0A2337">
-          <path d="M964 300 L1044 300 L1036 310 L972 310 Z" />
-          <rect x="996" y="288" width="12" height="12" />
-          <rect x="1012" y="284" width="7" height="16" />
+          <g>
+            {!reduced && (
+              <animateTransform
+                attributeName="transform"
+                type="translate"
+                from="0 0"
+                to="-1900 0"
+                dur="95s"
+                begin="-58s"
+                repeatCount="indefinite"
+              />
+            )}
+            <g transform={reduced ? "translate(990 0)" : undefined}>
+              <path d="M964 300 L1044 300 L1036 310 L972 310 Z" />
+              <rect x="996" y="288" width="12" height="12" />
+              <rect x="1012" y="284" width="7" height="16" />
+            </g>
+          </g>
         </g>
 
         {/* hero vessel */}
@@ -112,8 +127,8 @@ export function ShipScene({ className = "" }: { className?: string }) {
               type="translate"
               from="-500 236"
               to="1760 236"
-              dur="80s"
-              begin="-48s"
+              dur="52s"
+              begin="-30s"
               repeatCount="indefinite"
             />
           )}

@@ -387,7 +387,7 @@ export function SimulationsPage() {
                       key={scenario.id}
                       type="button"
                       onClick={() => setResult(scenario)}
-                      className={cn("flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-white/[0.03]", result?.id === scenario.id ? "bg-white/[0.03]" : "")}
+                      className={cn("flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-ink-800", result?.id === scenario.id ? "bg-ink-800" : "")}
                     >
                       <span className="flex h-7 w-7 items-center justify-center rounded border border-line bg-ink-900/60">
                         {scenario.scenario_type === "sudden_ship" ? <ShipIcon size={12} className="text-slate-500" /> : scenario.scenario_type === "warehouse_shortage" ? <WarehouseIcon size={12} className="text-slate-500" /> : scenario.scenario_type === "truck_breakdown" ? <Truck size={12} className="text-slate-500" /> : <FlaskConical size={12} className="text-slate-500" />}

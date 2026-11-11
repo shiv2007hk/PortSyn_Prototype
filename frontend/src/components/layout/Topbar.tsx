@@ -14,7 +14,6 @@ import { SEVERITY_STYLE } from "@/lib/status";
 import { Badge, Button } from "@/components/ui/primitives";
 import { DropdownContent, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, DropdownTrigger } from "@/components/ui/dropdown";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 const PAGE_TITLES: Record<string, { section: string; title: string }> = {
   "/app": { section: "Command", title: "Port overview" },
@@ -198,8 +197,6 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
           <span className="font-mono text-2xs tabular-nums text-slate-300">{clock.time}</span>
           <span className="font-mono text-3xs uppercase text-slate-600">UTC</span>
         </div>
-
-        <ThemeToggle label={false} className="h-8 w-8 justify-center px-0" />
 
         <DropdownMenu>
           <DropdownTrigger asChild>
