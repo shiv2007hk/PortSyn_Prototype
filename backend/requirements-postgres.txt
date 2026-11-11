@@ -1,2 +1,3 @@
-# Optional PostgreSQL driver. The API runs on SQLite without it.
+# PostgreSQL driver. Also pinned in requirements.txt, which serverless
+# platforms (Vercel) install exclusively. Kept here for standalone installs.
 psycopg[binary]==3.2.9

@@ -9,6 +9,6 @@ qrcode==8.2
 # Optional: OR-Tools is not required — allocation uses a transparent weighted
 # ranking with hard-constraint gating. Install only if you extend the engine.
 # ortools==9.11.4210
-# PostgreSQL driver. Included here because some platforms (Vercel) install only
-# this manifest; harmless for SQLite-only local runs.
--r requirements-postgres.txt
+# PostgreSQL driver. Inlined (not an "-r" include) because Vercel's Python
+# dependency parser rejects include directives; mirrors requirements-postgres.txt.
+psycopg[binary]==3.2.9
