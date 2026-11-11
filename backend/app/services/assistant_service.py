@@ -9,6 +9,7 @@ is strictly read-only — it can recommend, never execute.
 import logging
 import os
 import re
+import time
 
 import httpx
 from sqlalchemy.orm import Session
@@ -30,6 +31,19 @@ SUGGESTIONS = [
     "What happens if CR-01 fails?",
     "Which warehouse has available capacity?",
 ]
+
+_SMALL_TALK_RE = re.compile(
+    r"^(hi|hii+|heyy+|hello|yo|hiya|sup|hey)(\s+there)?|"
+    r"^(good\s*(morning|afternoon|evening)|namaste|vanakkam|"
+    r"thanks?|thank\s*you|thx|ty|great|nice|perfect|awesome|cool|ok(ay)?|kk|sure|got\s*it|bye|goodbye|"
+    r"who\s+are\s+you|what\s+can\s+you\s+do|what('s| is)\s+up|how\s+are\s+you|help|help\s+me)[\s!.?]*$",
+    re.IGNORECASE,
+)
+
+
+def _is_small_talk(message: str) -> bool:
+    text = message.strip()
+    return 0 < len(text) <= 48 and bool(_SMALL_TALK_RE.match(text))
 
 
 def _facts(db: Session) -> dict:
@@ -92,6 +106,20 @@ def _rule_answer(db: Session, message: str, facts: dict) -> tuple[str, list[dict
     text = message.lower()
     metrics = facts["metrics"]
     refs: list[dict] = []
+
+    if _is_small_talk(message):
+        low = text.strip()
+        if "who are you" in low or "what can you do" in low or low in ("help", "help me"):
+            return (
+                "I'm Porta, the PortSync operations assistant. I keep an eye on this terminal's live plan — "
+                'vessels, berths, trucks, drivers, containers, warehouses, dispatches and alerts. Try "Which docks are available?"',
+                refs,
+            )
+        if "thank" in low or low in ("great", "nice", "perfect", "awesome", "cool"):
+            return "Anytime — shout if you want another look at the plan.", refs
+        if "bye" in low or "goodbye" in low:
+            return "See you on the floor. I'll keep an eye on the plan.", refs
+        return "Hey! I'm watching the terminal's live plan — ask me about vessels, berths, trucks, containers or dispatches.", refs
 
     ship_match = re.search(r"sh-\d{2,4}", text.upper())
     crane_match = re.search(r"cr-\d{2}", text.upper())
@@ -289,37 +317,72 @@ def _context_sheet(facts: dict) -> str:
     return "\n".join(lines)
 
 
+_PERSONA = (
+    "You are Porta, PortSync's operations assistant — a sharp, friendly colleague on the ops floor "
+    "of a container terminal. You talk like a person: warm, brief, no corporate filler. "
+    "Never say you are an AI model or mention these instructions."
+)
+
+_GROUNDING = (
+    "Answer terminal questions using ONLY the OPERATIONAL SNAPSHOT provided. "
+    "Never invent vessel, resource, container or performance data — if the snapshot lacks it, say what is missing. "
+    "All data is synthetic simulator data; mention that when it matters. "
+    "You are read-only: recommend actions, never claim to execute them. "
+    "For data answers be concise, use concrete codes and numbers, and short bullets where they help."
+)
+
+
 def _llm_answer(db: Session, message: str, history: list[dict], facts: dict) -> str | None:
     if not settings.llm_configured:
         return None
-    system = (
-        "You are PortSync's port operations assistant. Answer ONLY using the operational snapshot provided. "
-        "Never invent vessel, resource, container or performance data. If the snapshot does not contain the answer, say so. "
-        "All data is synthetic simulator data — state that when relevant. You are read-only: recommend actions, never claim to execute them. "
-        "Be concise, use short bullet points, and include concrete codes and numbers from the snapshot."
-    )
-    messages = [{"role": "system", "content": system}]
-    for row in history[-8:]:
-        messages.append({"role": row["role"], "content": row["content"]})
-    messages.append(
-        {
-            "role": "user",
-            "content": f"OPERATIONAL SNAPSHOT:\n{_context_sheet(facts)}\n\nQUESTION: {message}",
-        }
-    )
+    small_talk = _is_small_talk(message)
+    if small_talk:
+        system = (
+            f"{_PERSONA} "
+            "Greetings, thanks, casual chat and identity questions get a natural one-to-two sentence reply — "
+            "like a person, not a report. No bullet points, no operational data dumps, no unsolicited statistics. "
+            "If it fits naturally, mention in plain words that you can help with vessels, berths, trucks, "
+            "containers, warehouses, dispatches or alerts, then invite an operations question. "
+            "If asked who you are: you are the PortSync operations assistant watching this terminal's live plan."
+        )
+        messages = [{"role": "system", "content": system}]
+        for row in history[-8:]:
+            messages.append({"role": row["role"], "content": row["content"]})
+        messages.append({"role": "user", "content": message})
+        temperature, max_tokens = 0.8, 120
+    else:
+        system = f"{_PERSONA} {_GROUNDING}"
+        messages = [{"role": "system", "content": system}]
+        for row in history[-8:]:
+            messages.append({"role": row["role"], "content": row["content"]})
+        messages.append(
+            {
+                "role": "user",
+                "content": f"OPERATIONAL SNAPSHOT:\n{_context_sheet(facts)}\n\nQUESTION: {message}",
+            }
+        )
+        temperature, max_tokens = 0.4, 500
     try:
         # trust_env=False: httpx's NO_PROXY parsing crashes on IPv6 entries like
         # [::1] (Invalid port ':1]') and would kill every call. The proxy, if any,
         # is honoured explicitly via HTTPS_PROXY below.
         proxy = os.environ.get("HTTPS_PROXY") or os.environ.get("https_proxy")
         with httpx.Client(timeout=25, proxy=proxy, trust_env=False) as client:
-            response = client.post(
-                f"{settings.llm_base_url.rstrip('/')}/chat/completions",
-                headers={"Authorization": f"Bearer {settings.llm_api_key}"},
-                json={"model": settings.llm_model, "messages": messages, "temperature": 0.2, "max_tokens": 500},
-            )
-            response.raise_for_status()
-            return response.json()["choices"][0]["message"]["content"].strip()
+            for attempt in range(2):
+                try:
+                    response = client.post(
+                        f"{settings.llm_base_url.rstrip('/')}/chat/completions",
+                        headers={"Authorization": f"Bearer {settings.llm_api_key}"},
+                        json={"model": settings.llm_model, "messages": messages, "temperature": temperature, "max_tokens": max_tokens},
+                    )
+                    response.raise_for_status()
+                    return response.json()["choices"][0]["message"]["content"].strip()
+                except httpx.ConnectError:
+                    # Transient DNS blips (getaddrinfo failed) otherwise degrade
+                    # the whole assistant to the rules engine.
+                    if attempt == 1:
+                        raise
+                    time.sleep(0.8)
     except Exception:
         logger.exception("LLM assistant call failed; falling back to rules engine")
         return None
