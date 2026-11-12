@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   Activity,
@@ -20,6 +20,8 @@ import {
   Truck,
   Warehouse,
   X,
+  Moon,
+  Sun,
 } from "lucide-react";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/format";
@@ -27,14 +29,14 @@ import { LogoMark } from "@/components/layout/Logo";
 import { ShipScene } from "@/components/landing/ShipScene";
 import { FeatureOrbit } from "@/components/landing/FeatureOrbit";
 import { CountUp, Reveal, useScrollFlag } from "@/components/landing/Reveal";
+import { ThemeProvider, useLandingTheme } from "@/lib/theme";
 
 const NAV = [
-  { href: "#top", label: "Home" },
   { href: "#platform", label: "Platform" },
   { href: "#solutions", label: "Solutions" },
   { href: "#features", label: "Features" },
-  { href: "#about", label: "About" },
-  { href: "#contact", label: "Contact" },
+  { href: "#digital-twin", label: "Digital Twin" },
+  { href: "#operations", label: "Operations" },
 ];
 
 const FEATURES = [
@@ -71,13 +73,14 @@ function SectionLabel({ children, tone = "light" }: { children: React.ReactNode;
 function NavBar() {
   const scrolled = useScrollFlag(30);
   const { user } = useAuth();
+  const { theme, toggleTheme } = useLandingTheme();
   const [open, setOpen] = useState(false);
-  const [active, setActive] = useState("#top");
+  const [active, setActive] = useState("#platform");
 
   useEffect(() => {
     const ids = NAV.map((item) => item.href.slice(1));
     const onScroll = () => {
-      let current = "#top";
+      let current = "#platform";
       ids.forEach((id) => {
         const element = document.getElementById(id);
         if (element && element.getBoundingClientRect().top <= 180) current = `#${id}`;
@@ -129,6 +132,15 @@ function NavBar() {
         </nav>
 
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleTheme}
+            className="theme-toggle-btn inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-400"
+            aria-label={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+            title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          >
+            {theme === "dark" ? <Sun size={15} /> : <Moon size={15} />}
+          </button>
           <Link
             to={user ? "/app" : "/login"}
             className={cn(
@@ -172,9 +184,18 @@ function NavBar() {
               {item.label}
             </a>
           ))}
-          <div className="mt-2 flex gap-2 border-t border-line pt-3">
+          <div className="mt-2 flex items-center gap-2 border-t border-line pt-3">
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="theme-toggle-btn flex h-9 items-center justify-center gap-2 rounded-lg border border-line px-3 text-[12.5px] font-medium text-slate-200"
+              aria-label="Toggle theme"
+            >
+              {theme === "dark" ? <Sun size={14} /> : <Moon size={14} />}
+              <span>{theme === "dark" ? "Light" : "Dark"}</span>
+            </button>
             <Link to={user ? "/app" : "/login"} className="flex-1 rounded-lg border border-line px-3 py-2 text-center text-[12.5px] text-slate-200">
-              {user ? "Workspace" : "Login"}
+              {user ? "Workspace" : "Log in"}
             </Link>
             <Link to={user ? "/app" : "/signup"} className="flex-1 rounded-lg bg-marine-600 px-3 py-2 text-center text-[12.5px] font-medium text-white">
               {user ? "Open" : "Get started"}
@@ -187,11 +208,61 @@ function NavBar() {
 }
 
 function Hero() {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const [videoFailed, setVideoFailed] = useState(false);
+  const [reduceMotion, setReduceMotion] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduceMotion(preference.matches);
+    const onChange = (event: MediaQueryListEvent) => setReduceMotion(event.matches);
+    preference.addEventListener?.("change", onChange);
+    return () => preference.removeEventListener?.("change", onChange);
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    const applyPlaybackRate = () => {
+      video.playbackRate = 1.75;
+    };
+    applyPlaybackRate();
+    video.addEventListener("play", applyPlaybackRate);
+    video.addEventListener("loadedmetadata", applyPlaybackRate);
+    return () => {
+      video.removeEventListener("play", applyPlaybackRate);
+      video.removeEventListener("loadedmetadata", applyPlaybackRate);
+    };
+  }, [videoFailed]);
+
   return (
     <section id="top" className="relative flex min-h-[100svh] flex-col justify-center overflow-hidden bg-[#050f1a] pt-20">
-      <ShipScene className="absolute inset-x-0 bottom-0 h-[66%] min-h-[340px]" />
-      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(5,15,26,0.96)_0%,rgba(5,15,26,0.72)_30%,rgba(5,15,26,0.38)_52%,rgba(5,15,26,0.08)_74%,transparent_100%)]" />
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-[#050f1a]/80 to-transparent" />
+      {!videoFailed ? (
+        <video
+          ref={videoRef}
+          className="hero-video pointer-events-none absolute inset-0 z-0 h-full w-full object-cover"
+          autoPlay={!reduceMotion}
+          loop={!reduceMotion}
+          muted
+          playsInline
+          preload="metadata"
+          poster="/images/port-approach.jpg"
+          aria-hidden="true"
+          onLoadedMetadata={(e) => {
+            e.currentTarget.playbackRate = 1.75;
+          }}
+          onError={() => setVideoFailed(true)}
+        >
+          <source src="/videos/portsync-cinematic-port.mp4" type="video/mp4" />
+        </video>
+      ) : (
+        <ShipScene className="absolute inset-x-0 bottom-0 z-0 h-[66%] min-h-[340px]" />
+      )}
+      <div className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(90deg,var(--hero-overlay-start)_0%,var(--hero-overlay-mid)_48%,var(--hero-overlay-end)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-[1] h-48 bg-gradient-to-b from-[var(--hero-top-grad)] to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-36 bg-gradient-to-t from-[var(--hero-bottom-grad)] via-[var(--hero-bottom-grad)]/50 to-transparent" />
 
       <div className="landing-wrap relative z-10 px-5 pb-24 pt-10 sm:px-8 lg:px-12 lg:pb-32">
         <div className="max-w-[760px]">
@@ -200,7 +271,7 @@ function Hero() {
             <span className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] text-[#B6DFEE]">Smart port operations platform</span>
           </div>
 
-          <h1 className="editorial-title mt-6 max-w-[16ch] text-[42px] text-white sm:text-[58px] lg:text-[70px]">
+          <h1 className="editorial-title mt-6 max-w-[22ch] text-[40px] text-white sm:text-[52px] lg:text-[58px] xl:text-[64px]">
             Your port.
             <span className="block text-[#9FD3E8]">Connected. Intelligent.</span>
             <span className="block">Optimized.</span>
@@ -253,58 +324,105 @@ function Hero() {
 }
 
 function Intro() {
+  const rows = [
+    { label: "VESSEL ARRIVAL", value: "2 ready", state: "READY", stateClass: "text-emerald-300 bg-emerald-300/10" },
+    { label: "BERTH COMPATIBILITY", value: "6 / 6 eligible", state: "PASS", stateClass: "text-cyan-300 bg-cyan-300/10" },
+    { label: "CRANE PRESSURE", value: "Low · 4 available", state: "STABLE", stateClass: "text-emerald-300 bg-emerald-300/10" },
+  ];
+
   return (
     <section id="platform" className="landing-section border-b border-line bg-ink-900">
       <div className="landing-wrap">
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center">
+        <div className="grid gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center lg:gap-14">
           <Reveal>
             <SectionLabel>The connected terminal</SectionLabel>
-            <h2 className="editorial-title mt-5 text-[34px] text-slate-50 sm:text-[44px]">
+            <h2 className="editorial-title mt-5 text-[32px] text-slate-50 sm:text-[40px] lg:text-[42px]">
               One connected ecosystem.
               <span className="block text-slate-400">Complete port intelligence.</span>
             </h2>
-            <p className="mt-5 max-w-[46ch] text-[14px] leading-relaxed text-slate-400">
+            <p className="mt-5 max-w-[46ch] text-[13px] leading-relaxed text-slate-400 sm:text-[13.5px]">
               Berth planning, cargo discharge, yard storage and road dispatch usually live in separate systems. PortSync keeps
               them in one operational model, so every decision is made against the same state of the port.
             </p>
-            <div className="mt-7 grid max-w-md grid-cols-3 gap-3">
+            <div className="mt-7 grid max-w-[420px] grid-cols-3 gap-2.5">
               {[
                 { value: 1, suffix: "", label: "Shared digital twin" },
                 { value: 10, suffix: "", label: "Operational modules" },
                 { value: 24, suffix: "/7", label: "Event ledger" },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-panel border border-line bg-ink-800/60 px-3 py-3">
-                  <div className="font-mono text-[22px] tabular-nums text-slate-50">
+                <div key={stat.label} className="rounded-panel border border-line bg-ink-800/55 px-3 py-3">
+                  <div className="font-mono text-[21px] tabular-nums text-slate-50">
                     <CountUp value={stat.value} suffix={stat.suffix} />
                   </div>
-                  <div className="mt-1 text-[10.5px] leading-snug text-slate-500">{stat.label}</div>
+                  <div className="mt-1 text-[9.5px] leading-snug text-slate-500 sm:text-[10px]">{stat.label}</div>
                 </div>
               ))}
             </div>
           </Reveal>
 
-          <Reveal delay={120} className="relative">
-            <div className="overflow-hidden rounded-card border border-line shadow-lift">
-              <img
-                src="/images/port-approach.jpg"
-                alt="A container vessel approaching a terminal at blue hour"
-                className="h-[300px] w-full object-cover transition-transform duration-[1.6s] ease-out hover:scale-[1.03] sm:h-[400px]"
-                loading="lazy"
-              />
-            </div>
-            <div className="absolute -bottom-6 left-6 right-6 rounded-panel border border-line bg-ink-850/95 px-4 py-3 shadow-float backdrop-blur sm:left-10 sm:right-auto sm:w-[300px]">
-              <div className="flex items-center justify-between">
-                <span className="micro-label">Vessel synchronised</span>
-                <span className="status-dot bg-signal-green animate-pulse-dot" />
+          <Reveal delay={100} className="relative">
+            <div className="operation-model relative overflow-hidden rounded-[18px] border border-white/[0.12] bg-[#0A1D2C] shadow-[0_34px_90px_-48px_rgba(0,0,0,0.95)]">
+              <div className="h-[2px] bg-gradient-to-r from-[#26B7D3] via-[#5CD9E8] to-transparent" />
+              <div className="flex items-start justify-between gap-4 border-b border-white/[0.08] px-4 py-4 sm:px-5">
+                <div className="flex min-w-0 items-start gap-3">
+                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-cyan-300/15 bg-cyan-300/[0.07] text-[#7FDCEB]">
+                    <Ship size={17} />
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="font-display text-[14px] font-semibold text-slate-100 sm:text-[15px]">TERMINAL 2 · OPERATIONS MODEL</h3>
+                    <p className="mt-1 font-mono text-[9px] uppercase tracking-[0.12em] text-slate-500">Mumbai Port · INBOM-T2</p>
+                  </div>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-cyan-300/20 bg-cyan-300/[0.06] px-2 py-1 font-mono text-[8px] uppercase tracking-[0.1em] text-cyan-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse-dot" /> Synced
+                </span>
               </div>
-              <div className="mt-1.5 flex items-baseline justify-between">
-                <span className="font-mono text-[13px] text-slate-100">SH-104 · MV Konkan Star</span>
-                <span className="font-mono text-[9.5px] uppercase tracking-[0.08em] text-cyan-400">Approach</span>
+
+              <div className="px-4 py-4 sm:px-5">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <p className="font-mono text-[8.5px] uppercase tracking-[0.16em] text-slate-500">Current vessel</p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      <span className="font-mono text-[13px] font-medium text-slate-100 sm:text-[14px]">SH-104 · MV Konkan Star</span>
+                      <span className="rounded bg-cyan-300/10 px-1.5 py-0.5 font-mono text-[7.5px] uppercase tracking-[0.1em] text-cyan-200">Approach</span>
+                    </div>
+                  </div>
+                  <div className="text-left sm:text-right">
+                    <p className="font-mono text-[8px] uppercase tracking-[0.14em] text-slate-500">Queue position</p>
+                    <p className="mt-1 font-mono text-[19px] leading-none text-slate-50">02<span className="ml-1 text-[10px] text-slate-500">/ 06</span></p>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid grid-cols-3 gap-2" aria-label="Berth selection preview">
+                  {[
+                    { label: "Berth 01", status: "Occupied", active: false },
+                    { label: "Berth 03", status: "Available", active: false },
+                    { label: "Berth 04", status: "Recommended", active: true },
+                  ].map((berth) => (
+                    <div key={berth.label} className={cn("rounded-lg border px-2.5 py-2.5", berth.active ? "border-cyan-400/55 bg-cyan-300/[0.09]" : "border-white/[0.08] bg-white/[0.025]")}>
+                      <p className={cn("font-mono text-[9px] sm:text-[10px]", berth.active ? "text-cyan-100" : "text-slate-300")}>{berth.label}</p>
+                      <p className={cn("mt-1 text-[8px] sm:text-[9px]", berth.active ? "text-cyan-300" : "text-slate-500")}>{berth.status}</p>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 space-y-2.5">
+                  {rows.map((row) => (
+                    <div key={row.label} className="flex items-center justify-between gap-3 border-t border-white/[0.06] pt-2.5">
+                      <div className="min-w-0">
+                        <p className="font-mono text-[8px] uppercase tracking-[0.11em] text-slate-500">{row.label}</p>
+                        <p className="mt-1 text-[11px] text-slate-200">{row.value}</p>
+                      </div>
+                      <span className={cn("shrink-0 rounded px-2 py-1 font-mono text-[7.5px] uppercase tracking-[0.08em]", row.stateClass)}>{row.state}</span>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="mt-4 flex items-center justify-between gap-4 border-t border-white/[0.08] pt-3 font-mono text-[8px] uppercase tracking-[0.1em] text-slate-500">
+                  <span className="inline-flex items-center gap-1.5"><Activity size={10} className="text-cyan-300" /> Deterministic simulator</span>
+                  <span>Sample terminal state</span>
+                </div>
               </div>
-              <div className="mt-2 h-1 overflow-hidden rounded-full bg-ink-600">
-                <div className="h-full w-[68%] rounded-full bg-gradient-to-r from-[#2477B8] to-[#26B7D3]" />
-              </div>
-              <p className="mt-2 font-mono text-[9px] uppercase tracking-[0.12em] text-slate-600">Demo data · deterministic simulator</p>
             </div>
           </Reveal>
         </div>
@@ -316,12 +434,12 @@ function Intro() {
 function Marquee() {
   const items = ["Smart ports", "Intelligent logistics", "Digital twin", "Resource optimisation", "Connected operations"];
   return (
-    <section aria-label="Platform themes" className="overflow-hidden border-y border-white/10 bg-[#071827] py-5">
+    <section aria-label="Platform themes" className="overflow-hidden border-y border-[var(--marquee-border)] bg-[var(--marquee-bg)] py-5 transition-colors">
       <div className="marquee-track items-center gap-8">
         {[...items, ...items, ...items, ...items].map((item, index) => (
           <div key={`${item}-${index}`} className="flex shrink-0 items-center gap-8">
-            <span className="font-display text-[13px] font-medium uppercase tracking-[0.24em] text-[#B6DFEE]/80">{item}</span>
-            <span className="h-1 w-1 rounded-full bg-[#26B7D3]/70" />
+            <span className="font-display text-[13px] font-medium uppercase tracking-[0.24em] text-[var(--marquee-text)]">{item}</span>
+            <span className="h-1 w-1 rounded-full bg-signal-cyan/70" />
           </div>
         ))}
       </div>
@@ -333,68 +451,162 @@ function About() {
   const pillars = [
     {
       title: "Unified port visibility",
-      copy: "A vessel, a berth, a crane and a truck are never separate facts. The twin shows how they constrain each other in real time.",
+      copy: "A vessel, a berth, a crane and a truck are never separate facts. The twin shows how they constrain each other in the same operating picture.",
     },
     {
       title: "Intelligent resource coordination",
-      copy: "Hard constraints gate every allocation. Weighted scoring then ranks the feasible package and explains the result.",
+      copy: "Hard constraints gate every allocation. Weighted scoring then ranks feasible options and explains the recommendation.",
     },
     {
       title: "Faster operational decisions",
-      copy: "Simulation, alerting and a full audit trail shorten the distance between a disruption and a deliberate response.",
+      copy: "Simulation, alerting and a complete audit trail shorten the distance between a disruption and a deliberate response.",
     },
   ];
+
   return (
     <section id="solutions" className="landing-section bg-ink-900">
       <div className="landing-wrap">
-        <Reveal className="max-w-2xl">
-          <SectionLabel>Why PortSync</SectionLabel>
-          <h2 className="editorial-title mt-5 text-[34px] text-slate-50 sm:text-[44px]">Built around how a terminal actually works.</h2>
-        </Reveal>
-
-        <div className="mt-12 grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:items-start">
-          <div className="space-y-1">
-            {pillars.map((pillar, index) => (
-              <Reveal key={pillar.title} delay={index * 90}>
-                <div className="group flex gap-5 border-t border-line py-6 transition-colors hover:bg-ink-800/40">
-                  <span className="mt-1 font-mono text-[11px] text-marine-500">0{index + 1}</span>
-                  <div>
-                    <h3 className="font-display text-[18px] font-medium text-slate-100 transition-colors group-hover:text-cyan-400">{pillar.title}</h3>
-                    <p className="mt-2 max-w-[48ch] text-[13px] leading-relaxed text-slate-400">{pillar.copy}</p>
-                  </div>
-                </div>
-              </Reveal>
-            ))}
-            <Reveal delay={280}>
-              <div className="border-t border-line pt-6">
-                <Link to="/login" className="group inline-flex items-center gap-2 text-[13px] font-medium text-marine-400">
-                  See it in the workspace
-                  <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
-                </Link>
-              </div>
+        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center lg:gap-12">
+          <div>
+            <Reveal className="max-w-2xl">
+              <SectionLabel>Port systems</SectionLabel>
+              <h2 className="editorial-title mt-5 text-[32px] text-slate-50 sm:text-[42px]">
+                Built around how a terminal actually works.
+              </h2>
             </Reveal>
+            <div className="mt-8 space-y-1">
+              {pillars.map((pillar, index) => (
+                <Reveal key={pillar.title} delay={index * 80}>
+                  <div className="group flex gap-4 border-t border-line py-4 transition-colors hover:bg-ink-800/35 sm:gap-5 sm:py-5">
+                    <span className="mt-1 font-mono text-[10px] text-marine-400">0{index + 1}</span>
+                    <div>
+                      <h3 className="font-display text-[15px] font-medium text-slate-100 transition-colors group-hover:text-cyan-300 sm:text-[16px]">{pillar.title}</h3>
+                      <p className="mt-1.5 max-w-[45ch] text-[11.5px] leading-relaxed text-slate-400 sm:text-[12px]">{pillar.copy}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))}
+            </div>
           </div>
 
-          <Reveal delay={120}>
-            <div className="relative overflow-hidden rounded-card border border-line">
-              <img
-                src="/images/port-terminal.jpg"
-                alt="Aerial view of an organised container terminal"
-                className="h-[420px] w-full object-cover"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[#071827]/85 via-transparent to-transparent" />
-              <div className="absolute inset-x-0 bottom-0 p-5">
-                <div className="flex flex-wrap gap-2">
-                  {["Berths", "Cranes", "Trucks", "Yard", "Warehouse", "Dispatch"].map((chip) => (
-                    <span key={chip} className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 font-mono text-[9px] uppercase tracking-[0.1em] text-white/85 backdrop-blur">
-                      {chip}
+          <Reveal delay={100}>
+            <div id="operations" className="port-schematic scroll-mt-24 overflow-hidden rounded-[16px] border border-white/[0.11] bg-[#081B2A] shadow-[0_38px_90px_-54px_rgba(0,0,0,0.95)]">
+              <div className="flex items-center justify-between gap-3 border-b border-white/[0.08] px-4 py-3 sm:px-5">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <Map size={13} className="shrink-0 text-[#7FC4DF]" />
+                  <span className="truncate font-mono text-[8.5px] uppercase tracking-[0.13em] text-[#9DB9CA] sm:text-[9px]">Port terminal · network view</span>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-300/[0.08] px-2 py-1 font-mono text-[7.5px] uppercase tracking-[0.1em] text-emerald-200">
+                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse-dot" /> Connected
+                </span>
+              </div>
+
+              <svg viewBox="0 0 620 390" className="port-schematic-canvas block h-auto w-full" role="img" aria-label="Animated port schematic with vessel, berths, cranes, container yard and moving operational routes">
+                <defs>
+                  <pattern id="port-map-grid" width="24" height="24" patternUnits="userSpaceOnUse">
+                    <path d="M24 0H0V24" fill="none" stroke="#16354A" strokeWidth="0.65" />
+                  </pattern>
+                  <linearGradient id="port-map-water" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#0A354A" />
+                    <stop offset="100%" stopColor="#071D2B" />
+                  </linearGradient>
+                  <linearGradient id="port-map-quay" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#19384A" />
+                    <stop offset="50%" stopColor="#294A5B" />
+                    <stop offset="100%" stopColor="#173447" />
+                  </linearGradient>
+                </defs>
+                <rect width="620" height="390" fill="#071827" />
+                <rect width="620" height="390" fill="url(#port-map-grid)" />
+                <rect x="0" y="0" width="620" height="102" fill="url(#port-map-water)" />
+                <g className="port-map-water-lines" fill="none" stroke="#2D7088" strokeWidth="0.8" opacity="0.55">
+                  <path d="M12 25 C70 18 95 33 148 26 S236 21 288 29 S384 19 438 26 S530 21 610 27" />
+                  <path d="M-8 48 C42 41 101 56 154 49 S238 45 296 51 S400 43 452 50 S542 45 628 51" />
+                  <path d="M22 76 C78 68 130 82 181 75 S269 70 328 78 S426 68 486 76 S560 70 620 75" />
+                </g>
+                <text x="20" y="18" fill="#6D95A9" fontFamily="IBM Plex Mono, monospace" fontSize="8" letterSpacing="1.2">APPROACH CHANNEL</text>
+                <path d="M0 105 H620 V128 H0 Z" fill="url(#port-map-quay)" stroke="#42657A" strokeWidth="0.8" />
+                <path d="M0 131 H620" stroke="#6D92A5" strokeWidth="1" strokeDasharray="2 5" opacity="0.55" />
+                <text x="18" y="121" fill="#A8C7D6" fontFamily="IBM Plex Mono, monospace" fontSize="7.5" letterSpacing="1">QUAYSIDE / TERMINAL 2</text>
+
+                {/* Container yard lanes */}
+                <rect x="18" y="148" width="268" height="218" rx="4" fill="#0A2232" stroke="#1D4054" />
+                <text x="28" y="164" fill="#6E93A8" fontFamily="IBM Plex Mono, monospace" fontSize="8" letterSpacing="1">CONTAINER YARD</text>
+                {[0, 1, 2, 3, 4, 5].map((col) => [0, 1, 2, 3, 4, 5].map((row) => {
+                  const colors = ["#20506A", "#285E78", "#9A4C3D", "#1B4259", "#2C7187"];
+                  const fill = colors[(col * 2 + row * 3) % colors.length];
+                  return <rect key={`${col}-${row}`} x={30 + col * 40} y={178 + row * 28} width="32" height="20" rx="1.5" fill={fill} stroke="#6CA3B5" strokeOpacity="0.24" strokeWidth="0.6" />;
+                }))}
+                <g stroke="#2D6279" strokeWidth="1" fill="none" opacity="0.8">
+                  <path d="M30 208H270M30 236H270M30 264H270M30 292H270M30 320H270M70 178V346M110 178V346M150 178V346M190 178V346M230 178V346" strokeDasharray="2 6" />
+                </g>
+
+                {/* Berth blocks */}
+                <g>
+                  {[0, 1, 2].map((index) => (
+                    <g key={index}>
+                      <rect x="310" y={150 + index * 68} width="292" height="56" rx="3" fill="#0A2637" stroke={index === 0 ? "#267C94" : "#1D4155"} strokeWidth={index === 0 ? "1.2" : "0.8"} />
+                      <text x="321" y={164 + index * 68} fill="#668FA4" fontFamily="IBM Plex Mono, monospace" fontSize="7.5" letterSpacing="0.8">BERTH 0{index + 1}</text>
+                    </g>
+                  ))}
+                </g>
+
+                {/* Ship at berth one */}
+                <g transform="translate(346 165)">
+                  <path d="M0 12 L10 31 H204 L219 12 Z" fill="#173F56" stroke="#58A7C4" strokeWidth="1.1" />
+                  <path d="M5 12 H213" stroke="#9FDCE8" strokeWidth="0.8" opacity="0.85" />
+                  {[0, 1, 2, 3, 4, 5, 6, 7].map((n) => (
+                    <g key={n}>
+                      <rect x={20 + n * 21} y="-1" width="18" height="12" rx="0.8" fill={n % 3 === 0 ? "#B45A43" : n % 2 === 0 ? "#2B7996" : "#28516C"} stroke="#B8DFE6" strokeOpacity="0.26" strokeWidth="0.5" />
+                      <rect x={20 + n * 21} y="-13" width="18" height="11" rx="0.8" fill={n % 4 === 0 ? "#3E8197" : "#1F4A63"} stroke="#B8DFE6" strokeOpacity="0.22" strokeWidth="0.5" />
+                    </g>
+                  ))}
+                  <rect x="174" y="-12" width="25" height="24" rx="1" fill="#BDD5DF" />
+                  <rect x="180" y="-8" width="9" height="6" fill="#173347" />
+                  <circle cx="212" cy="5" r="2.5" fill="#63E2F0" className="landing-signal-pulse" />
+                </g>
+
+                {/* Gantry cranes */}
+                {[360, 434, 508, 574].map((x, index) => (
+                  <g key={x} transform={`translate(${x} 147)`} fill="none" stroke={index === 0 ? "#57C6D8" : "#44748C"} strokeWidth="1.8">
+                    <path d="M0 0 V-17 M27 0 V-17 M-4 -17 H31 M0 -17 L27 -35 M27 -17 L0 -35" />
+                    <path d="M-5 -29 H32" strokeWidth="1.1" />
+                    <path d="M13 -17 V-5" strokeWidth="1" />
+                  </g>
+                ))}
+
+                {/* Animated operational routes */}
+                <g fill="none" stroke="#39C9DF" strokeWidth="1.5" strokeLinecap="round" opacity="0.92">
+                  <path className="landing-route-path" d="M176 315 C238 315 260 280 302 280 S345 265 370 246" />
+                  <path className="landing-route-path landing-route-path-alt" d="M252 195 C282 195 284 181 312 181 S333 183 350 182" />
+                  <path className="landing-route-path landing-route-path-slow" d="M120 346 C218 362 276 330 314 295 S359 270 390 245" />
+                </g>
+                <circle r="4" fill="#78F1FB" className="landing-route-marker"><animateMotion dur="4.8s" repeatCount="indefinite" path="M176 315 C238 315 260 280 302 280 S345 265 370 246" /></circle>
+                <circle r="3" fill="#A8DDF0" className="landing-route-marker landing-route-marker-delayed"><animateMotion dur="6.4s" begin="-2.4s" repeatCount="indefinite" path="M120 346 C218 362 276 330 314 295 S359 270 390 245" /></circle>
+
+                {/* Compact labels and legend */}
+                <g fontFamily="IBM Plex Mono, monospace" fontSize="7" letterSpacing="0.7" fill="#6D95A9">
+                  <text x="30" y="376">YARD ZONE B</text>
+                  <text x="320" y="374">EQUIPMENT ROUTE</text>
+                  <text x="512" y="374" fill="#72D9E7">SYNCED</text>
+                </g>
+                <circle cx="304" cy="360" r="3" fill="#54CFE1" />
+                <circle cx="496" cy="360" r="3" fill="#54CFE1" />
+              </svg>
+
+              <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/[0.08] px-4 py-3 sm:px-5">
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                  {[
+                    { color: "bg-cyan-300", label: "Vessel route" },
+                    { color: "bg-blue-400", label: "Equipment" },
+                    { color: "bg-emerald-300", label: "Available" },
+                  ].map((item) => (
+                    <span key={item.label} className="inline-flex items-center gap-1.5 font-mono text-[8px] uppercase tracking-[0.08em] text-slate-500">
+                      <span className={cn("h-1.5 w-1.5 rounded-full", item.color)} /> {item.label}
                     </span>
                   ))}
                 </div>
-                <p className="mt-3 max-w-[42ch] text-[12px] leading-relaxed text-[#C5D9E6]">
-                  Every resource that touches a container is represented in the same operating picture.
-                </p>
+                <span className="font-mono text-[8px] uppercase tracking-[0.1em] text-slate-600">Illustrative terminal state</span>
               </div>
             </div>
           </Reveal>
@@ -405,56 +617,45 @@ function About() {
 }
 
 function Capabilities() {
-  const spans = [
-    "lg:col-span-2 lg:row-span-2",
-    "",
-    "",
-    "lg:col-span-2",
-    "",
-    "",
-    "",
-    "lg:col-span-2",
-    "",
-    "",
-  ];
   return (
     <section id="features" className="landing-section relative bg-ink-850">
       <div className="landing-wrap">
-        <Reveal className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
-          <div className="max-w-xl">
+        <Reveal className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+          <div className="max-w-2xl">
             <SectionLabel>Core capabilities</SectionLabel>
-            <h2 className="editorial-title mt-5 text-[34px] text-slate-50 sm:text-[44px]">
+            <h2 className="editorial-title mt-5 text-[32px] text-slate-50 sm:text-[42px]">
               Ten modules. One operating picture.
             </h2>
           </div>
-          <p className="max-w-[34ch] text-[13px] leading-relaxed text-slate-500">
-            Each capability shares the same vessels, berths, equipment, containers and audit trail.
+          <p className="max-w-[34ch] text-[11.5px] leading-relaxed text-slate-500 sm:text-[12px]">
+            One connected model for vessels, berths, equipment, containers and the full dispatch lifecycle.
           </p>
         </Reveal>
 
-        <div className="mt-12 grid auto-rows-[minmax(150px,auto)] gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-9 grid gap-2.5 sm:grid-cols-2 lg:grid-cols-5">
           {FEATURES.map((feature, index) => (
-            <Reveal key={feature.title} delay={(index % 3) * 70} className={cn("h-full", spans[index])}>
-              <div
-                className={cn(
-                  "group relative flex h-full flex-col justify-between overflow-hidden rounded-card border border-line bg-ink-800/70 p-5 transition-all duration-300 hover:-translate-y-1 hover:border-marine-500/40 hover:bg-ink-800",
-                  index === 0 && "sm:p-7",
-                )}
-              >
-                <div className="flex items-start justify-between">
-                  <span className="flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-ink-900 text-marine-400 transition-colors group-hover:border-cyan-400/40 group-hover:text-cyan-400">
-                    <feature.icon size={16} />
+            <Reveal key={feature.title} delay={(index % 5) * 45} className="h-full">
+              <article className="group relative flex h-full min-h-[142px] flex-col overflow-hidden rounded-[12px] border border-line bg-ink-800/65 p-3.5 transition-all duration-300 hover:-translate-y-0.5 hover:border-cyan-400/35 hover:bg-ink-800 sm:min-h-[150px] sm:p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-md border border-line bg-ink-900 text-marine-400 transition-colors group-hover:border-cyan-300/30 group-hover:text-cyan-300">
+                    <feature.icon size={14} />
                   </span>
-                  <span className="font-mono text-[9px] uppercase tracking-[0.14em] text-slate-700">0{index + 1}</span>
+                  <span className="font-mono text-[8px] uppercase tracking-[0.12em] text-slate-700">{String(index + 1).padStart(2, "0")}</span>
                 </div>
-                <div className="mt-6">
-                  <h3 className={cn("font-display font-medium text-slate-100", index === 0 ? "text-[21px]" : "text-[15px]")}>{feature.title}</h3>
-                  <p className={cn("mt-2 leading-relaxed text-slate-400", index === 0 ? "max-w-[36ch] text-[13px]" : "text-[12px]")}>{feature.copy}</p>
+                <div className="mt-4">
+                  <h3 className="font-display text-[12px] font-semibold leading-snug text-slate-100 sm:text-[12.5px]">{feature.title}</h3>
+                  <p className="mt-1.5 text-[10px] leading-[1.55] text-slate-500 sm:text-[10.5px]">{feature.copy}</p>
                 </div>
-                <div className="pointer-events-none absolute -right-10 -top-10 h-28 w-28 rounded-full bg-marine-500/0 blur-2xl transition-colors duration-500 group-hover:bg-marine-500/10" />
-              </div>
+                <span className="pointer-events-none absolute inset-x-4 bottom-0 h-px origin-left scale-x-0 bg-gradient-to-r from-cyan-300/75 to-transparent transition-transform duration-300 group-hover:scale-x-100" />
+              </article>
             </Reveal>
           ))}
+        </div>
+        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+          <span className="font-mono text-[8px] uppercase tracking-[0.16em] text-slate-600">Connected modules / Shared terminal state / Audited actions</span>
+          <Link to="/login" className="group inline-flex items-center gap-1.5 text-[11px] font-medium text-marine-400 transition-colors hover:text-cyan-300">
+            Explore the workspace <ArrowRight size={12} className="transition-transform group-hover:translate-x-0.5" />
+          </Link>
         </div>
       </div>
     </section>
@@ -485,45 +686,46 @@ function Orbit() {
 }
 
 function TwinShowcase() {
+  const { theme } = useLandingTheme();
   return (
-    <section className="relative overflow-hidden bg-[#061523] py-24 lg:py-32">
-      <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: "radial-gradient(#7FC4DF 0.7px, transparent 0.7px)", backgroundSize: "26px 26px" }} />
+    <section id="digital-twin" className="relative overflow-hidden bg-[var(--twin-bg)] py-20 transition-colors lg:py-24">
+      <div className="absolute inset-0 opacity-[0.16]" style={{ backgroundImage: "radial-gradient(var(--accent-blue) 0.7px, transparent 0.7px)", backgroundSize: "26px 26px" }} />
       <div className="landing-wrap relative px-5 sm:px-8 lg:px-12">
         <div className="grid gap-12 lg:grid-cols-[0.8fr_1.2fr] lg:items-center">
           <Reveal>
-            <SectionLabel tone="dark">Digital twin</SectionLabel>
-            <h2 className="editorial-title mt-5 text-[34px] text-white sm:text-[46px]">
+            <SectionLabel tone={theme === "dark" ? "dark" : "light"}>Digital twin</SectionLabel>
+            <h2 className="editorial-title mt-5 text-[34px] text-slate-50 sm:text-[46px]">
               See your port.
-              <span className="block text-[#9FD3E8]">Before it happens.</span>
+              <span className="block text-marine-400">Before it happens.</span>
             </h2>
-            <p className="mt-5 max-w-[44ch] text-[13.5px] leading-relaxed text-[#A9C6D8]">
+            <p className="mt-5 max-w-[44ch] text-[13.5px] leading-relaxed text-slate-400">
               A live spatial model of berths, cranes, vehicles and the container yard. Watch an arrival propagate through the
               terminal before a single truck is dispatched.
             </p>
             <div className="mt-7 flex flex-wrap gap-2">
               {[
-                { dot: "bg-[#34D399]", label: "Available" },
-                { dot: "bg-[#26B7D3]", label: "In operation" },
-                { dot: "bg-[#F59E0B]", label: "Attention" },
-                { dot: "bg-[#EF4444]", label: "Fault" },
+                { dot: "bg-signal-green", label: "Available" },
+                { dot: "bg-signal-cyan", label: "In operation" },
+                { dot: "bg-signal-amber", label: "Attention" },
+                { dot: "bg-signal-red", label: "Fault" },
               ].map((item) => (
-                <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/[0.04] px-2.5 py-1 text-[10px] text-[#BBD5E4]">
+                <span key={item.label} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-ink-850 px-2.5 py-1 text-[10px] text-slate-300">
                   <span className={cn("h-1.5 w-1.5 rounded-full", item.dot)} /> {item.label}
                 </span>
               ))}
             </div>
-            <p className="mt-6 font-mono text-[9px] uppercase tracking-[0.14em] text-[#5E7F94]">Demonstration preview · sample terminal state</p>
+            <p className="mt-6 font-mono text-[9px] uppercase tracking-[0.14em] text-slate-500">Demonstration preview · sample terminal state</p>
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="overflow-hidden rounded-card border border-white/12 bg-[#081B2B]/90 shadow-[0_50px_120px_-50px_rgba(0,0,0,0.9)]">
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
+            <div className="overflow-hidden rounded-card border border-line bg-ink-850 shadow-panel">
+              <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
                 <div className="flex items-center gap-2">
-                  <Map size={12} className="text-[#7FC4DF]" />
-                  <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-[#9DB9CA]">Terminal 2 · twin preview</span>
+                  <Map size={12} className="text-marine-400" />
+                  <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-400">Terminal 2 · twin preview</span>
                 </div>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-[#26B7D3]/10 px-2 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.1em] text-[#7FC4DF]">
-                  <span className="h-1 w-1 rounded-full bg-[#26B7D3] animate-pulse-dot" /> Demo
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-marine-500/10 px-2 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.1em] text-marine-400">
+                  <span className="h-1 w-1 rounded-full bg-signal-cyan animate-pulse-dot" /> Demo
                 </span>
               </div>
               <div className="grid gap-0 lg:grid-cols-[1fr_190px]">
@@ -600,27 +802,27 @@ function TwinShowcase() {
                   </g>
                 </svg>
 
-                <div className="border-t border-white/10 p-3 lg:border-l lg:border-t-0">
-                  <div className="micro-label text-[#6E93A8]">Berth occupancy</div>
+                <div className="border-t border-line p-3 lg:border-l lg:border-t-0">
+                  <div className="micro-label">Berth occupancy</div>
                   <div className="mt-3 space-y-2.5">
                     {[
-                      { label: "A · SH-104", value: 86, tone: "#26B7D3" },
-                      { label: "B · SH-098", value: 64, tone: "#3979E8" },
-                      { label: "C · free", value: 0, tone: "#34D399" },
+                      { label: "A · SH-104", value: 86, tone: "var(--accent-cyan)" },
+                      { label: "B · SH-098", value: 64, tone: "var(--accent-blue)" },
+                      { label: "C · free", value: 0, tone: "var(--status-success)" },
                     ].map((row) => (
                       <div key={row.label}>
-                        <div className="flex justify-between font-mono text-[8.5px] uppercase tracking-[0.06em] text-[#8FAFC2]">
+                        <div className="flex justify-between font-mono text-[8.5px] uppercase tracking-[0.06em] text-slate-400">
                           <span>{row.label}</span>
                           <span>{row.value}%</span>
                         </div>
-                        <div className="mt-1 h-1 rounded-full bg-white/10">
+                        <div className="mt-1 h-1 rounded-full bg-ink-700">
                           <div className="h-full rounded-full transition-all" style={{ width: `${row.value}%`, background: row.tone }} />
                         </div>
                       </div>
                     ))}
                   </div>
-                  <div className="mt-4 border-t border-white/10 pt-3">
-                    <div className="font-mono text-[8.5px] uppercase tracking-[0.1em] text-[#6E93A8]">Resources</div>
+                  <div className="mt-4 border-t border-line pt-3">
+                    <div className="font-mono text-[8.5px] uppercase tracking-[0.1em] text-slate-500">Resources</div>
                     <div className="mt-1.5 grid grid-cols-2 gap-1.5">
                       {[
                         { label: "Cranes", value: "4/6" },
@@ -628,9 +830,9 @@ function TwinShowcase() {
                         { label: "Drivers", value: "6" },
                         { label: "Boxes", value: "42" },
                       ].map((row) => (
-                        <div key={row.label} className="rounded border border-white/10 bg-white/[0.03] px-1.5 py-1">
-                          <div className="font-mono text-[7.5px] uppercase tracking-[0.06em] text-[#5E8298]">{row.label}</div>
-                          <div className="font-mono text-[11px] text-[#D3E6F0]">{row.value}</div>
+                        <div key={row.label} className="rounded border border-line bg-ink-800 px-1.5 py-1">
+                          <div className="font-mono text-[7.5px] uppercase tracking-[0.06em] text-slate-500">{row.label}</div>
+                          <div className="font-mono text-[11px] text-slate-200">{row.value}</div>
                         </div>
                       ))}
                     </div>
@@ -661,7 +863,7 @@ function Allocation() {
         </Reveal>
 
         <div className="relative mt-14">
-          <div className="absolute left-0 right-0 top-6 hidden h-px bg-gradient-to-r from-transparent via-marine-500/40 to-transparent lg:block" />
+          <div className="workflow-track absolute left-0 right-0 top-6 hidden h-px lg:block" aria-hidden="true" />
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-6">
             {WORKFLOW.map((step, index) => (
               <Reveal key={step.title} delay={index * 80}>
@@ -705,55 +907,56 @@ function Allocation() {
 }
 
 function Simulation() {
+  const { theme } = useLandingTheme();
   return (
-    <section className="landing-section bg-[#071827]">
+    <section className="landing-section bg-[var(--sim-bg)] transition-colors">
       <div className="landing-wrap">
-        <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
+        <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-center">
           <Reveal>
-            <SectionLabel tone="dark">What-if simulation</SectionLabel>
-            <h2 className="editorial-title mt-5 text-[34px] text-white sm:text-[44px]">
+            <SectionLabel tone={theme === "dark" ? "dark" : "light"}>What-if simulation</SectionLabel>
+            <h2 className="editorial-title mt-5 text-[34px] text-slate-50 sm:text-[44px]">
               Prepare for disruptions
-              <span className="block text-[#9FD3E8]">before they happen.</span>
+              <span className="block text-marine-400">before they happen.</span>
             </h2>
-            <p className="mt-5 max-w-[46ch] text-[13.5px] leading-relaxed text-[#A9C6D8]">
+            <p className="mt-5 max-w-[46ch] text-[13.5px] leading-relaxed text-slate-400">
               Take a crane out of service, spike inbound demand or slow a vessel. The simulator projects the consequences
               without touching the operational database — nothing is applied until you explicitly approve it.
             </p>
-            <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-[#F59E0B]/25 bg-[#F59E0B]/10 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-[#F5C97A]">
+            <p className="mt-6 inline-flex items-center gap-2 rounded-full border border-amber-400/25 bg-amber-400/10 px-3 py-1 font-mono text-[9px] uppercase tracking-[0.12em] text-signal-amber">
               <FlaskConical size={11} /> Scenario sandbox · isolated from live state
             </p>
           </Reveal>
 
           <Reveal delay={120}>
-            <div className="overflow-hidden rounded-card border border-white/12 bg-[#0A1F30]">
-              <div className="flex items-center justify-between border-b border-white/10 px-4 py-2.5">
-                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-[#9DB9CA]">Scenario · crane failure at berth B</span>
-                <span className="rounded bg-[#F59E0B]/15 px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.08em] text-[#F5C97A]">Simulated</span>
+            <div className="overflow-hidden rounded-card border border-line bg-ink-850 shadow-panel">
+              <div className="flex items-center justify-between border-b border-line px-4 py-2.5">
+                <span className="font-mono text-[9.5px] uppercase tracking-[0.14em] text-slate-400">Scenario · crane failure at berth B</span>
+                <span className="rounded bg-amber-400/15 px-1.5 py-0.5 font-mono text-[8.5px] uppercase tracking-[0.08em] text-signal-amber">Simulated</span>
               </div>
-              <div className="grid gap-px bg-white/10 sm:grid-cols-2">
+              <div className="grid gap-px bg-line sm:grid-cols-2">
                 {[
-                  { title: "Before", tag: "Current plan", tone: "text-[#8FAFC2]", rows: [["Berth queue", "2 vessels"], ["Crane capacity", "6 of 6"], ["Projected turnaround", "14.2 h"], ["Yard pressure", "68%"]] },
-                  { title: "After", tag: "Crane B2 offline", tone: "text-[#F5C97A]", rows: [["Berth queue", "3 vessels"], ["Crane capacity", "5 of 6"], ["Projected turnaround", "16.8 h"], ["Yard pressure", "76%"]] },
+                  { title: "Before", tag: "Current plan", tone: "text-slate-400", rows: [["Berth queue", "2 vessels"], ["Crane capacity", "6 of 6"], ["Projected turnaround", "14.2 h"], ["Yard pressure", "68%"]] },
+                  { title: "After", tag: "Crane B2 offline", tone: "text-signal-amber", rows: [["Berth queue", "3 vessels"], ["Crane capacity", "5 of 6"], ["Projected turnaround", "16.8 h"], ["Yard pressure", "76%"]] },
                 ].map((column, index) => (
-                  <div key={column.title} className="bg-[#0A1F30] p-4">
+                  <div key={column.title} className="bg-ink-850 p-4">
                     <div className="flex items-center justify-between">
                       <span className={cn("font-mono text-[10px] uppercase tracking-[0.16em]", column.tone)}>{column.title}</span>
-                      <span className="font-mono text-[8.5px] text-[#5E7F94]">{column.tag}</span>
+                      <span className="font-mono text-[8.5px] text-slate-500">{column.tag}</span>
                     </div>
                     <div className="mt-3 space-y-2">
                       {column.rows.map(([label, value]) => (
-                        <div key={label} className="flex items-center justify-between border-b border-white/[0.06] pb-1.5">
-                          <span className="text-[11px] text-[#7FA0B4]">{label}</span>
-                          <span className={cn("font-mono text-[11px]", index === 1 ? "text-[#F5C97A]" : "text-[#D3E6F0]")}>{value}</span>
+                        <div key={label} className="flex items-center justify-between border-b border-line/60 pb-1.5">
+                          <span className="text-[11px] text-slate-400">{label}</span>
+                          <span className={cn("font-mono text-[11px]", index === 1 ? "text-signal-amber" : "text-slate-200")}>{value}</span>
                         </div>
                       ))}
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="flex items-center justify-between border-t border-white/10 px-4 py-2.5">
-                <span className="font-mono text-[8.5px] uppercase tracking-[0.08em] text-[#5E7F94]">Illustrative figures · no live data modified</span>
-                <span className="inline-flex items-center gap-1.5 text-[10px] text-[#7FC4DF]"><Check size={11} /> Draft only</span>
+              <div className="flex items-center justify-between border-t border-line px-4 py-2.5">
+                <span className="font-mono text-[8.5px] uppercase tracking-[0.08em] text-slate-500">Illustrative figures · no live data modified</span>
+                <span className="inline-flex items-center gap-1.5 text-[10px] text-marine-400"><Check size={11} /> Draft only</span>
               </div>
             </div>
           </Reveal>
@@ -807,23 +1010,50 @@ function Impact() {
 }
 
 function FinalCta() {
+  const { theme } = useLandingTheme();
+  const [reduceMotion, setReduceMotion] = useState(
+    () => typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setReduceMotion(preference.matches);
+    const onChange = (event: MediaQueryListEvent) => setReduceMotion(event.matches);
+    preference.addEventListener?.("change", onChange);
+    return () => preference.removeEventListener?.("change", onChange);
+  }, []);
+
   return (
-    <section id="about" className="relative overflow-hidden bg-[#061523] py-24 lg:py-32">
-      <img src="/images/port-night.jpg" alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover opacity-45" loading="lazy" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#061523] via-[#061523]/80 to-[#061523]/40" />
+    <section id="about" className="relative isolate overflow-hidden bg-[var(--hero-bottom-grad)] py-20 transition-colors sm:py-24 lg:py-28">
+      <video
+        className="pointer-events-none absolute inset-0 -z-20 h-full w-full object-cover object-[55%_center]"
+        autoPlay={!reduceMotion}
+        muted
+        loop={!reduceMotion}
+        playsInline
+        preload="none"
+        poster="/images/port-night.jpg"
+        aria-hidden="true"
+      >
+        <source src="/videos/portsync-cinematic-port.mp4" type="video/mp4" />
+      </video>
+      <img src="/images/port-night.jpg" alt="" aria-hidden="true" className="pointer-events-none absolute inset-0 -z-30 h-full w-full object-cover" loading="lazy" />
+      <div className="pointer-events-none absolute inset-0 -z-10 bg-[linear-gradient(90deg,var(--hero-overlay-start)_0%,var(--hero-overlay-mid)_48%,var(--hero-overlay-end)_100%)]" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 -z-10 h-24 bg-gradient-to-b from-[var(--hero-bottom-grad)] to-transparent" />
       <div className="landing-wrap relative px-5 sm:px-8 lg:px-12">
-        <Reveal className="max-w-2xl">
-          <SectionLabel tone="dark">Start synchronising</SectionLabel>
-          <h2 className="editorial-title mt-5 text-[36px] text-white sm:text-[52px]">Ready to build a smarter port?</h2>
-          <p className="mt-4 max-w-[48ch] text-[14px] leading-relaxed text-[#BBD5E4]">
-            Explore the full operating workspace with the deterministic demonstration terminal, or create a read-only account
-            in seconds.
+        <Reveal className="max-w-[620px]">
+          <SectionLabel tone={theme === "dark" ? "dark" : "light"}>Start synchronising</SectionLabel>
+          <h2 className="editorial-title mt-5 text-[35px] text-slate-50 sm:text-[48px] lg:text-[52px]">
+            Ready to build a smarter port?
+          </h2>
+          <p className="mt-4 max-w-[48ch] text-[13px] leading-relaxed text-slate-300 sm:text-[14px]">
+            Explore the full operating workspace with a deterministic demonstration terminal, or create a read-only account in seconds.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link to="/signup" className="group inline-flex h-11 items-center gap-2 rounded-full bg-white px-5 text-[13px] font-semibold text-[#102A43] transition-transform hover:-translate-y-0.5">
-              Get started <ArrowRight size={15} className="transition-transform group-hover:translate-x-0.5" />
+          <div className="mt-7 flex flex-wrap gap-3">
+            <Link to="/signup" className="group inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-[12px] font-semibold text-[#102A43] shadow-panel transition-transform hover:-translate-y-0.5 sm:h-11 sm:px-5 sm:text-[13px]">
+              Get started <ArrowRight size={14} className="transition-transform group-hover:translate-x-0.5" />
             </Link>
-            <a href="#platform" className="inline-flex h-11 items-center rounded-full border border-white/25 bg-white/[0.05] px-5 text-[13px] font-medium text-white backdrop-blur-md hover:bg-white/10">
+            <a href="#platform" className="inline-flex h-10 items-center rounded-full border border-line bg-ink-850/60 px-4 text-[12px] font-medium text-slate-50 backdrop-blur-md transition-colors hover:bg-ink-800 sm:h-11 sm:px-5 sm:text-[13px]">
               Explore platform
             </a>
           </div>
@@ -885,22 +1115,28 @@ function Footer() {
   );
 }
 
-export function LandingPage() {
+function LandingContent() {
+  const { theme } = useLandingTheme();
   return (
-    <div className="min-h-screen bg-ink-900">
+    <div className={cn("landing-page min-h-screen bg-ink-900 transition-colors", `theme-${theme}`)}>
       <NavBar />
       <Hero />
       <Intro />
-      <Marquee />
       <About />
       <Capabilities />
       <Orbit />
       <TwinShowcase />
-      <Allocation />
       <Simulation />
-      <Impact />
       <FinalCta />
       <Footer />
     </div>
+  );
+}
+
+export function LandingPage() {
+  return (
+    <ThemeProvider>
+      <LandingContent />
+    </ThemeProvider>
   );
 }

@@ -19,7 +19,7 @@ const HOLD = "group-hover:[animation-play-state:paused]";
  * readout panel mirrors the active module.
  */
 export function FeatureOrbit({ features }: { features: OrbitFeature[] }) {
-  const [active, setActive] = useState(0);
+  const [active, setActive] = useState(6);
   const [engaged, setEngaged] = useState(false);
 
   useEffect(() => {

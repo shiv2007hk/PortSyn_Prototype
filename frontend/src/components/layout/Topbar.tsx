@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Boxes, ChevronDown, LogOut, Menu, RefreshCw, Search, ShieldCheck, Ship, UserRound } from "lucide-react";
+import { Bell, Boxes, ChevronDown, LogOut, Menu, Moon, RefreshCw, Search, ShieldCheck, Ship, Sun, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -10,6 +10,7 @@ import { useClock, utcClock } from "@/lib/use-clock";
 import { useRealtime } from "@/lib/realtime";
 import { useAuth } from "@/lib/auth";
 import { cn, fmtAgo } from "@/lib/format";
+import { useTheme } from "@/lib/theme";
 import { SEVERITY_STYLE } from "@/lib/status";
 import { Badge, Button } from "@/components/ui/primitives";
 import { DropdownContent, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, DropdownTrigger } from "@/components/ui/dropdown";
@@ -125,6 +126,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
   const { data: summary } = useAlertSummary();
   const { data: alerts } = useAlerts({ status: "active", page_size: 6 });
   const { data: info } = useSystemInfo();
+  const { theme, toggleTheme } = useTheme();
   const queryClient = useQueryClient();
   const [resetOpen, setResetOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
@@ -247,6 +249,16 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
             </div>
           </DropdownContent>
         </DropdownMenu>
+
+        <button
+          type="button"
+          onClick={toggleTheme}
+          aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          className="rounded-lg border border-line bg-ink-900/60 p-2 text-slate-400 transition-colors hover:border-line-strong hover:text-slate-100"
+        >
+          {theme === "dark" ? <Sun size={15} className="text-amber-400" /> : <Moon size={15} className="text-slate-600" />}
+        </button>
 
         <DropdownMenu>
           <DropdownTrigger asChild>

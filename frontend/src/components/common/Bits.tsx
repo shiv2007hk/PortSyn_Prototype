@@ -52,7 +52,7 @@ export function KpiTile({
     green: "bg-emerald-400",
   }[tone];
   return (
-    <div className="group relative overflow-hidden rounded-panel border border-line bg-ink-750/70 px-3.5 py-3 shadow-panel transition-colors hover:border-line-strong">
+    <div className="card-shine group relative overflow-hidden rounded-panel border border-line bg-ink-750/70 px-3.5 py-3 shadow-panel transition-colors hover:border-line-strong">
       <span className={cn("absolute left-0 top-0 h-px w-full opacity-60", bar)} />
       <div className="flex items-start justify-between gap-2">
         <span className="micro-label">{label}</span>

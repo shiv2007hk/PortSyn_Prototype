@@ -81,6 +81,49 @@
     --scroll-thumb-hover: 163 184 200;
   }
 
+  html.dark,
+  :root.dark {
+    color-scheme: dark;
+    --ink-950: 8 15 28;        /* #080F1C Main workspace background */
+    --ink-900: 11 20 36;       /* #0B1424 Secondary workspace surface */
+    --ink-850: 17 30 48;       /* #111E30 Standard cards & surfaces */
+    --ink-800: 22 38 59;       /* #16263B Elevated cards & popovers */
+    --ink-750: 17 30 48;       /* #111E30 Panels */
+    --ink-700: 27 47 71;       /* #1B2F47 Hover surface */
+    --ink-600: 36 55 77;       /* #24374D Borders & dividers */
+    --ink-500: 52 75 102;
+
+    --line: 36 55 77;          /* #24374D */
+    --line-strong: 55 78 105;
+
+    --slate-50: 232 240 250;   /* #E8F0FA Primary text */
+    --slate-100: 218 229 242;
+    --slate-200: 195 210 228;
+    --slate-300: 162 179 200;  /* #A2B3C8 Secondary text */
+    --slate-400: 135 155 178;
+    --slate-500: 120 141 167;  /* #788DA7 Muted labels */
+    --slate-600: 95 116 142;
+    --slate-700: 68 88 112;
+
+    --marine-300: 96 165 250;  /* #60A5FA Secondary blue */
+    --marine-400: 34 211 238;  /* #22D3EE Primary accent */
+    --marine-500: 34 211 238;
+    --marine-600: 14 165 233;
+    --marine-700: 2 132 199;
+
+    --signal-cyan: 34 211 238;  /* #22D3EE */
+    --signal-green: 52 211 153; /* #34D399 */
+    --signal-amber: 251 191 36; /* #FBBF24 */
+    --signal-red: 251 113 133;  /* #FB7185 */
+
+    --shadow-inset: 120 160 210;
+    --shadow-color: 0 4 12;
+    --grid-line: 36 55 77;
+    --scroll-track: 8 15 28;
+    --scroll-thumb: 36 55 77;
+    --scroll-thumb-hover: 55 78 105;
+  }
+
   * {
     @apply border-line;
   }
@@ -138,9 +181,196 @@
   }
 }
 
+/* Landing-page-only visual system. These scoped tokens recreate the cinematic
+   midnight-blue presentation in dark mode and arctic maritime presentation in light mode,
+   without changing dashboard or authentication themes. */
+.landing-page {
+  --page-bg: #06111D;
+  --surface-main: #091A28;
+  --card-elevated: #0D2232;
+  --surface-hover: #123044;
+  --border-subtle: #263C4D;
+  --text-primary: #F4F8FC;
+  --text-secondary: #B4C6D5;
+  --text-muted: #7F98AB;
+  --accent-cyan: #20C5E5;
+  --accent-blue: #63BFE1;
+  --status-success: #38C99A;
+  --status-warning: #F3BC68;
+  --status-error: #F17D86;
+  --schematic-bg: #071827;
+  --schematic-card: #081B2A;
+  --schematic-water-0: #0A354A;
+  --schematic-water-1: #071D2B;
+  --hero-overlay-start: rgba(5,15,26,0.91);
+  --hero-overlay-mid: rgba(5,15,26,0.52);
+  --hero-overlay-end: rgba(5,15,26,0.02);
+  --hero-top-grad: rgba(5,15,26,0.8);
+  --hero-bottom-grad: #061523;
+  --marquee-bg: #071827;
+  --marquee-border: rgba(255,255,255,0.1);
+  --marquee-text: #B6DFEE;
+  --twin-bg: #061523;
+  --twin-card: #081B2B;
+  --twin-svg-bg: #071A29;
+  --sim-bg: #071827;
+  --sim-card: #0A1F30;
+  --sim-row-border: rgba(255,255,255,0.06);
+  --orbit-bg: #071827;
+}
+
+.landing-page.theme-dark {
+  color-scheme: dark;
+  --ink-950: 4 13 23;        /* #040D17 */
+  --ink-900: 6 17 29;        /* #06111D */
+  --ink-850: 9 26 40;        /* #091A28 */
+  --ink-800: 13 34 50;       /* #0D2232 */
+  --ink-750: 18 48 68;       /* #123044 */
+  --ink-700: 24 58 82;
+  --ink-600: 32 72 100;
+  --ink-500: 42 88 120;
+
+  --line: 38 60 77;          /* #263C4D */
+  --line-strong: 55 82 102;
+
+  --slate-50: 244 248 252;   /* #F4F8FC */
+  --slate-100: 230 238 245;
+  --slate-200: 205 218 228;
+  --slate-300: 180 198 213;  /* #B4C6D5 */
+  --slate-400: 145 168 185;
+  --slate-500: 127 152 171;  /* #7F98AB */
+  --slate-600: 95 120 138;
+  --slate-700: 65 88 104;
+
+  --marine-300: 99 191 225;  /* #63BFE1 */
+  --marine-400: 32 197 229;  /* #20C5E5 */
+  --marine-500: 24 165 195;
+  --marine-600: 20 138 168;
+  --marine-700: 15 110 135;
+
+  --signal-cyan: 32 197 229;  /* #20C5E5 */
+  --signal-green: 56 201 154; /* #38C99A */
+  --signal-amber: 243 188 104;/* #F3BC68 */
+  --signal-red: 241 125 134;  /* #F17D86 */
+
+  --shadow-inset: 180 220 240;
+  --shadow-color: 0 7 17;
+  --grid-line: 111 164 190;
+  --scroll-track: 6 17 29;
+  --scroll-thumb: 38 60 77;
+  --scroll-thumb-hover: 55 82 102;
+  background: var(--page-bg);
+}
+
+.landing-page.theme-light {
+  color-scheme: light;
+  --page-bg: #F3F7FA;
+  --surface-main: #FFFFFF;
+  --card-elevated: #FFFFFF;
+  --surface-hover: #E6F2F8;
+  --border-subtle: #D6E3EC;
+  --text-primary: #102B40;
+  --text-secondary: #49667D;
+  --text-muted: #6F879A;
+  --accent-cyan: #087FA8;
+  --accent-blue: #337CE5;
+  --status-success: #087F62;
+  --status-warning: #94610A;
+  --status-error: #C43F52;
+  --schematic-bg: #F0F6FA;
+  --schematic-card: #FFFFFF;
+  --schematic-water-0: #D8ECF7;
+  --schematic-water-1: #C5E2F3;
+  --hero-overlay-start: rgba(5,15,26,0.88);
+  --hero-overlay-mid: rgba(5,15,26,0.46);
+  --hero-overlay-end: rgba(5,15,26,0.02);
+  --hero-top-grad: rgba(5,15,26,0.75);
+  --hero-bottom-grad: #F3F7FA;
+  --marquee-bg: #EAF2F7;
+  --marquee-border: #D6E3EC;
+  --marquee-text: #102B40;
+  --twin-bg: #EAF2F7;
+  --twin-card: #FFFFFF;
+  --twin-svg-bg: #F3F7FA;
+  --sim-bg: #F3F7FA;
+  --sim-card: #FFFFFF;
+  --sim-row-border: #E5EEF4;
+  --orbit-bg: #EAF2F7;
+
+  --ink-950: 234 242 247;    /* #EAF2F7 */
+  --ink-900: 243 247 250;    /* #F3F7FA page bg */
+  --ink-850: 255 255 255;    /* #FFFFFF card/surface */
+  --ink-800: 240 246 250;    /* #F0F6FA slightly deeper surface */
+  --ink-750: 230 242 248;    /* #E6F2F8 hover surface */
+  --ink-700: 220 234 242;
+  --ink-600: 200 218 230;
+  --ink-500: 175 198 214;
+
+  --line: 214 227 236;       /* #D6E3EC borders */
+  --line-strong: 185 204 218;
+
+  --slate-50: 16 43 64;      /* #102B40 primary text */
+  --slate-100: 22 54 78;
+  --slate-200: 45 78 104;
+  --slate-300: 73 102 125;   /* #49667D secondary text */
+  --slate-400: 95 122 142;
+  --slate-500: 111 135 154;  /* #6F879A muted metadata */
+  --slate-600: 135 156 172;
+  --slate-700: 165 184 198;
+
+  --marine-300: 51 124 229;  /* #337CE5 */
+  --marine-400: 8 127 168;   /* #087FA8 primary accent */
+  --marine-500: 7 112 148;
+  --marine-600: 6 98 130;
+  --marine-700: 5 80 108;
+
+  --signal-cyan: 8 127 168;   /* #087FA8 */
+  --signal-green: 8 127 98;   /* #087F62 */
+  --signal-amber: 148 97 10;  /* #94610A */
+  --signal-red: 196 63 82;    /* #C43F52 */
+
+  --shadow-inset: 255 255 255;
+  --shadow-color: 16 43 64;
+  --grid-line: 16 43 64;
+  --scroll-track: 243 247 250;
+  --scroll-thumb: 214 227 236;
+  --scroll-thumb-hover: 185 204 218;
+  background: var(--page-bg);
+}
+
+.landing-page .hero-video {
+  object-position: 55% center;
+  transform: scale(1.005);
+}
+
+.landing-page .workflow-track {
+  background-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgb(38 183 211 / 0.12) 18%,
+    rgb(38 183 211 / 0.72) 48%,
+    rgb(127 196 223 / 0.28) 66%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  animation: landing-workflow-scan 5.8s linear infinite;
+  opacity: 0.9;
+}
+
+@keyframes landing-workflow-scan {
+  from { background-position: 100% 0; }
+  to { background-position: -120% 0; }
+}
+
+@media (max-width: 640px) {
+  .landing-page .hero-video {
+    object-position: 60% center;
+  }
+}
+
 @layer components {
   .panel {
-    @apply rounded-panel border border-line bg-ink-750/95 shadow-panel;
+    @apply rounded-panel border border-line bg-ink-750/95 shadow-panel card-shine;
   }
 
   .panel-flat {
@@ -315,6 +545,110 @@
     stroke-dasharray: 6 10;
     animation: flow-dash 2.6s linear infinite;
   }
+
+  /* Card shine / subtle premium shimmer effect for enterprise dashboard cards */
+  .card-shine {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+
+  .card-shine::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    border-radius: inherit;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.05) 0%,
+      rgba(34, 211, 238, 0.02) 40%,
+      transparent 70%
+    );
+    opacity: 0.85;
+    transition: opacity 300ms ease;
+  }
+
+  .card-shine::after {
+    content: "";
+    position: absolute;
+    top: -50%;
+    bottom: -50%;
+    left: -100%;
+    width: 60%;
+    pointer-events: none;
+    z-index: 2;
+    transform: rotate(25deg);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.04) 35%,
+      rgba(34, 211, 238, 0.12) 50%,
+      rgba(255, 255, 255, 0.04) 65%,
+      transparent 100%
+    );
+    animation: card-shimmer-sweep 9s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+    opacity: 0.7;
+  }
+
+  html.light .card-shine::before {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.5) 0%,
+      rgba(8, 127, 168, 0.025) 45%,
+      transparent 75%
+    );
+  }
+
+  html.light .card-shine::after {
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.25) 35%,
+      rgba(8, 127, 168, 0.1) 50%,
+      rgba(255, 255, 255, 0.25) 65%,
+      transparent 100%
+    );
+    opacity: 0.6;
+  }
+
+  /* Stagger shimmer animations on adjacent cards so they don't sweep simultaneously */
+  .card-shine:nth-child(2n)::after {
+    animation-delay: 2.2s;
+  }
+  .card-shine:nth-child(3n)::after {
+    animation-delay: 4.5s;
+  }
+  .card-shine:nth-child(5n)::after {
+    animation-delay: 6.8s;
+  }
+
+  .card-shine:hover::after {
+    animation: card-shimmer-sweep-fast 850ms ease-out 1;
+    opacity: 1;
+  }
+}
+
+@keyframes card-shimmer-sweep {
+  0% {
+    transform: rotate(25deg) translateX(-180%);
+  }
+  18% {
+    transform: rotate(25deg) translateX(320%);
+  }
+  100% {
+    transform: rotate(25deg) translateX(320%);
+  }
+}
+
+@keyframes card-shimmer-sweep-fast {
+  0% {
+    transform: rotate(25deg) translateX(-180%);
+  }
+  100% {
+    transform: rotate(25deg) translateX(320%);
+  }
 }
 
 @keyframes cloud-drift {
@@ -421,6 +755,10 @@
     opacity: 1;
     transform: none;
   }
+  .landing-page .workflow-track {
+    animation: none;
+    background-position: center;
+  }
 }
 
 @media print {
@@ -441,5 +779,147 @@
     border-color: #cbd5e1 !important;
     box-shadow: none !important;
     break-inside: avoid;
+  }
+}
+
+/* Motion details used by the cinematic PortSync landing page only. */
+.landing-page .port-map-water-lines {
+  animation: landing-water-drift 18s ease-in-out infinite alternate;
+  transform-origin: center;
+}
+
+.landing-page .landing-route-path {
+  stroke-dasharray: 7 8;
+  animation: landing-route-flow 4.2s linear infinite;
+}
+
+.landing-page .landing-route-path-alt {
+  animation-duration: 5.4s;
+  animation-direction: reverse;
+  opacity: 0.72;
+}
+
+.landing-page .landing-route-path-slow {
+  animation-duration: 6.8s;
+  opacity: 0.58;
+}
+
+.landing-page .landing-route-marker {
+  filter: drop-shadow(0 0 4px rgba(79, 226, 244, 0.8));
+}
+
+.landing-page .landing-signal-pulse {
+  animation: landing-signal-beat 2.4s ease-in-out infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+@keyframes landing-route-flow {
+  to { stroke-dashoffset: -60; }
+}
+
+@keyframes landing-water-drift {
+  from { transform: translateX(-3px); opacity: 0.38; }
+  to { transform: translateX(4px); opacity: 0.68; }
+}
+
+@keyframes landing-signal-beat {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .port-map-water-lines,
+  .landing-page .landing-route-path,
+  .landing-page .landing-signal-pulse {
+    animation: none !important;
+  }
+
+  .landing-page .landing-route-marker {
+    display: none;
+  }
+}
+
+/* Light / Dark themed overrides for specific landing page diagrams and panels */
+.landing-page.theme-light .operation-model,
+.landing-page.theme-light .port-schematic {
+  background: var(--schematic-card) !important;
+  border-color: var(--border-subtle) !important;
+  box-shadow: 0 16px 36px -16px rgba(16, 43, 64, 0.08) !important;
+}
+
+.landing-page.theme-light .port-schematic rect[fill="#071827"] {
+  fill: var(--schematic-bg) !important;
+}
+
+.landing-page.theme-light .port-schematic rect[fill="#0A2232"],
+.landing-page.theme-light .port-schematic rect[fill="#0A2637"] {
+  fill: #FFFFFF !important;
+  stroke: var(--border-subtle) !important;
+}
+
+.landing-page.theme-light .port-schematic text {
+  fill: var(--text-muted) !important;
+}
+
+.landing-page.theme-light #port-map-grid path {
+  stroke: #D6E3EC !important;
+}
+
+.landing-page.theme-light #port-map-water stop:first-child {
+  stop-color: var(--schematic-water-0) !important;
+}
+.landing-page.theme-light #port-map-water stop:last-child {
+  stop-color: var(--schematic-water-1) !important;
+}
+
+.landing-page.theme-light #tw-grid path {
+  stroke: #D6E3EC !important;
+}
+
+.landing-page.theme-light #tw-water stop:first-child {
+  stop-color: var(--schematic-water-0) !important;
+}
+.landing-page.theme-light #tw-water stop:last-child {
+  stop-color: var(--schematic-water-1) !important;
+}
+
+.landing-page.theme-light svg[aria-label="Illustrated digital twin preview"] {
+  background: var(--twin-svg-bg) !important;
+}
+
+.landing-page.theme-light svg[aria-label="Illustrated digital twin preview"] g[fill="#0C2C40"] {
+  fill: #FFFFFF !important;
+  stroke: var(--border-subtle) !important;
+}
+
+.landing-page.theme-light .theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  color: #FFFFFF;
+}
+
+.landing-page.theme-light .glass-nav .theme-toggle-btn {
+  background: var(--surface-hover);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.landing-page.theme-dark .theme-toggle-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: var(--text-primary);
+}
+
+.landing-page.theme-dark .glass-nav .theme-toggle-btn {
+  background: var(--surface-hover);
+  border-color: var(--border-subtle);
+  color: var(--text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card-shine::after {
+    animation: none !important;
+    display: none !important;
   }
 }

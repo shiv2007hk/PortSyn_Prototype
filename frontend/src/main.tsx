@@ -4,24 +4,26 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 import { queryClient } from "@/lib/hooks";
 import { AuthProvider } from "@/lib/auth";
+import { ThemeProvider, useTheme } from "@/lib/theme";
 import { App } from "./App";
 import "./index.css";
 
 function Shell() {
+  const { theme } = useTheme();
   return (
     <>
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <App />
       </BrowserRouter>
       <Toaster
-        theme="light"
+        theme={theme}
         position="top-right"
         closeButton
         toastOptions={{
           style: {
-            background: "#FFFFFF",
-            border: "1px solid #DCE5ED",
-            color: "#102A43",
+            background: theme === "dark" ? "#16263B" : "#FFFFFF",
+            border: theme === "dark" ? "1px solid #24374D" : "1px solid #DCE5ED",
+            color: theme === "dark" ? "#E8F0FA" : "#102A43",
             fontSize: "12.5px",
           },
         }}
@@ -34,7 +36,9 @@ export function Root() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Shell />
+        <ThemeProvider>
+          <Shell />
+        </ThemeProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

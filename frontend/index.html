@@ -16,6 +16,18 @@
       rel="stylesheet"
     />
     <title>PortSync · One Port. Every Resource. Intelligent Operations.</title>
+    <script>
+      (function() {
+        try {
+          var saved = localStorage.getItem("portsync_theme") || localStorage.getItem("portsync_landing_theme");
+          var theme = saved === "light" || saved === "dark"
+            ? saved
+            : (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+          document.documentElement.classList.add(theme);
+          document.documentElement.classList.add("theme-" + theme);
+        } catch (e) {}
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
