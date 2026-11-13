@@ -19,6 +19,25 @@ PUBLIC_API_PATHS = (
 )
 SAFE_METHODS = {"GET", "HEAD", "OPTIONS"}
 
+ENDPOINT_PERMISSIONS = {
+    "/api/ships": {"super_admin", "port_administrator", "supervisor", "port_operator", "operator"},
+    "/api/docks": {"super_admin", "port_administrator", "supervisor", "port_operator", "operator"},
+    "/api/twin": {"super_admin", "port_administrator", "supervisor", "port_operator", "operator", "fleet_manager"},
+    "/api/resources": {"super_admin", "port_administrator", "supervisor", "fleet_manager", "maintenance_manager"},
+    "/api/allocations": {"super_admin", "port_administrator", "supervisor", "fleet_manager"},
+    "/api/containers": {"super_admin", "port_administrator", "supervisor", "port_operator", "operator", "warehouse_manager"},
+    "/api/warehouses": {"super_admin", "port_administrator", "supervisor", "warehouse_manager"},
+    "/api/dispatch": {"super_admin", "port_administrator", "supervisor", "warehouse_manager"},
+    "/api/simulations": {"super_admin", "port_administrator", "supervisor"},
+    # System administration endpoints: Super Admin (and legacy Supervisor)
+    "/api/system/reset-demo": {"super_admin", "supervisor"},
+    "/api/system/settings": {"super_admin", "supervisor"},
+    "/api/system/health-weights": {"super_admin", "supervisor"},
+    "/api/system/sim-clock": {"super_admin", "supervisor"},
+    "/api/system/audit": {"super_admin", "supervisor"},
+    "/api/system/users": {"super_admin", "supervisor"},
+}
+
 
 def _is_public(path: str) -> bool:
     if path in ("/api", "/api/"):
@@ -26,12 +45,24 @@ def _is_public(path: str) -> bool:
     return any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in PUBLIC_API_PATHS)
 
 
+def _is_authorized(role: str, path: str) -> bool:
+    if role == "super_admin":
+        return True
+
+    clean_path = path.rstrip("/")
+    for prefix, allowed_roles in ENDPOINT_PERMISSIONS.items():
+        if clean_path == prefix or path.startswith(prefix + "/") or path.startswith(prefix + "?"):
+            if role not in allowed_roles:
+                return False
+    return True
+
+
 def _json(status: int, detail: str) -> JSONResponse:
     return JSONResponse(status_code=status, content={"detail": detail})
 
 
 class AuthGuardMiddleware(BaseHTTPMiddleware):
-    """Session enforcement, CSRF verification and read-only viewer enforcement."""
+    """Session enforcement, role-based authorization, CSRF verification and read-only viewer enforcement."""
 
     async def dispatch(self, request: Request, call_next):
         path = request.url.path
@@ -66,6 +97,9 @@ class AuthGuardMiddleware(BaseHTTPMiddleware):
         session = request.state.session
         if user is None or session is None:
             return _json(401, "Authentication required. Sign in to continue.")
+
+        if not _is_authorized(user.role, path):
+            return _json(403, f"Access denied. Role '{user.role}' is not authorized to access this module.")
 
         if request.method not in SAFE_METHODS:
             supplied = request.headers.get(settings.csrf_header, "")

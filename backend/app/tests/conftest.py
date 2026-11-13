@@ -14,6 +14,8 @@ from app.core.config import settings  # noqa: E402
 from app.core.database import engine  # noqa: E402
 from app.main import app  # noqa: E402
 
+settings.sim_enabled = False
+
 
 @pytest.fixture(scope="session")
 def client():

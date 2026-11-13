@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Activity,
@@ -10,6 +11,7 @@ import {
   LayoutDashboard,
   Map,
   Radio,
+  ShieldCheck,
   Ship,
   Sparkles,
   Truck,
@@ -20,6 +22,8 @@ import {
 import { cn } from "@/lib/format";
 import { useRealtime } from "@/lib/realtime";
 import { useAlertSummary, useSystemInfo } from "@/lib/hooks";
+import { useAuth } from "@/lib/auth";
+import { hasRouteAccess } from "@/lib/rbac";
 import { LogoMark } from "./Logo";
 
 const GROUPS = [
@@ -46,6 +50,12 @@ const GROUPS = [
       { to: "/app/simulations", label: "Simulation Centre", icon: FlaskConical },
       { to: "/app/alerts", label: "Alerts & Maintenance", icon: BellRing },
       { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
+    ],
+  },
+  {
+    label: "Administration",
+    items: [
+      { to: "/app/system", label: "System & Roles", icon: ShieldCheck },
     ],
   },
 ];
@@ -88,9 +98,17 @@ export function Sidebar({
   onClose: () => void;
   onToggleCollapse: () => void;
 }) {
+  const { user } = useAuth();
   const { data: summary } = useAlertSummary();
   const { data: info } = useSystemInfo();
   const activeAlerts = summary?.active ?? 0;
+
+  const permittedGroups = useMemo(() => {
+    return GROUPS.map((group) => ({
+      ...group,
+      items: group.items.filter((item) => hasRouteAccess(user?.role, item.to)),
+    })).filter((group) => group.items.length > 0);
+  }, [user?.role]);
 
   return (
     <>
@@ -143,7 +161,7 @@ export function Sidebar({
         )}
 
         <nav className={cn("flex-1 overflow-y-auto scroll-thin py-4", collapsed ? "px-2" : "px-3")}>
-          {GROUPS.map((group) => (
+          {permittedGroups.map((group) => (
             <div key={group.label} className={collapsed ? "mb-3" : "mb-5"}>
               {!collapsed ? (
                 <div className="mb-1.5 px-3 font-mono text-3xs uppercase tracking-[0.16em] text-slate-600">{group.label}</div>

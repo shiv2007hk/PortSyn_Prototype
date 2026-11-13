@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ArrowRight, Boxes, Container as ContainerIcon, ExternalLink, Search, Ship as ShipIcon, Warehouse as WarehouseIcon } from "lucide-react";
+import {
+  ArrowRight,
+  Boxes,
+  Columns3,
+  Container as ContainerIcon,
+  ExternalLink,
+  LayoutGrid,
+  MapPin,
+  Search,
+  Ship as ShipIcon,
+  Warehouse as WarehouseIcon,
+} from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "@/lib/api";
-import { useBoard, useContainer, useResources, useShips, useWarehouses, queryClient, keys } from "@/lib/hooks";
+import { useBoard, useContainer, useResources, useShips, useWarehouses, queryClient } from "@/lib/hooks";
 import { cn, fmtDateTime, fmtNumber, fmtTime } from "@/lib/format";
 import { CONTAINER_COLUMNS, CONTAINER_STATUS_STYLE, PRIORITY_STYLE } from "@/lib/status";
 import {
@@ -111,7 +122,7 @@ function ContainerDetailPanel({ code, onClose }: { code: string | null; onClose:
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-1.5">
-              <span className="font-mono text-[13px] text-slate-100">{container.code}</span>
+              <span className="font-mono text-[13px] font-semibold text-slate-100">{container.code}</span>
               <Badge className={cn("normal-case tracking-[0.03em]", CONTAINER_STATUS_STYLE[container.status])}>
                 {container.status.replace(/_/g, " ")}
               </Badge>
@@ -286,8 +297,10 @@ export function ContainersPage() {
   const [searchParams] = useSearchParams();
   const [priority, setPriority] = useState("");
   const [shipCode, setShipCode] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState(() => searchParams.get("q") ?? "");
   const [selected, setSelected] = useState<string | null>(null);
+  const [viewMode, setViewMode] = useState<"grid" | "board">("grid");
 
   useEffect(() => {
     const query = searchParams.get("q");
@@ -309,12 +322,23 @@ export function ContainersPage() {
     };
   }, [board.data]);
 
+  const allContainers = useMemo(() => {
+    const columns = board.data?.columns ?? [];
+    const items: Container[] = [];
+    for (const col of columns) {
+      if (!statusFilter || col.status === statusFilter) {
+        items.push(...col.items);
+      }
+    }
+    return items;
+  }, [board.data, statusFilter]);
+
   return (
     <div className="space-y-4">
       <PageIntro
         eyebrow="Operations · container lifecycle"
         title="Container tracking"
-        description="A validated Kanban from vessel discharge to delivery. Every move is gated by the backend lifecycle graph, resource availability and storage capacity — with a QR label per box."
+        description="A validated container lifecycle tracking system from vessel discharge to dispatch. Every move is gated by the backend lifecycle graph, resource availability and storage capacity."
         meta={
           <>
             <Badge className="border-cyan-400/25 bg-cyan-400/[0.07] text-cyan-300">{fmtNumber(totals.total)} tracked boxes</Badge>
@@ -323,15 +347,57 @@ export function ContainersPage() {
         }
         actions={
           <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center rounded-lg border border-line bg-ink-850 p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode("grid")}
+                title="Responsive Grid View"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  viewMode === "grid"
+                    ? "bg-marine-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                <LayoutGrid size={13} />
+                <span>Grid</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("board")}
+                title="Kanban Board View"
+                className={cn(
+                  "flex items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition-colors",
+                  viewMode === "board"
+                    ? "bg-marine-600 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                )}
+              >
+                <Columns3 size={13} />
+                <span>Kanban</span>
+              </button>
+            </div>
+
             <div className="relative">
               <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-600" />
-              <Input placeholder="Search code or destination" value={search} onChange={(event) => setSearch(event.target.value)} className="h-8 w-52 pl-8" />
+              <Input placeholder="Search code or destination" value={search} onChange={(event) => setSearch(event.target.value)} className="h-8 w-48 pl-8 text-xs" />
             </div>
-            <Select value={priority} onChange={(event) => setPriority(event.target.value)} className="h-8 w-32">
+
+            {viewMode === "grid" ? (
+              <Select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} className="h-8 w-36 text-xs">
+                <option value="">All statuses</option>
+                {CONTAINER_COLUMNS.map((col) => (
+                  <option key={col.status} value={col.status}>{col.label}</option>
+                ))}
+              </Select>
+            ) : null}
+
+            <Select value={priority} onChange={(event) => setPriority(event.target.value)} className="h-8 w-28 text-xs">
               <option value="">All priority</option>
               {["critical", "high", "normal", "low"].map((value) => <option key={value} value={value}>{value}</option>)}
             </Select>
-            <Select value={shipCode} onChange={(event) => setShipCode(event.target.value)} className="h-8 w-36">
+
+            <Select value={shipCode} onChange={(event) => setShipCode(event.target.value)} className="h-8 w-32 text-xs">
               <option value="">All vessels</option>
               {(ships.data?.items ?? []).map((ship) => <option key={ship.code} value={ship.code}>{ship.code}</option>)}
             </Select>
@@ -347,73 +413,96 @@ export function ContainersPage() {
         }
       >
         <div className="grid grid-cols-2 gap-2.5 md:grid-cols-4">
-        {[
-          { label: "In transit", value: totals.moving, hint: "on terminal trucks", tone: "bg-signal-cyan" },
-          { label: "Stored", value: totals.yard, hint: "yard / warehouse", tone: "bg-amber-400" },
-          { label: "Ready to dispatch", value: totals.ready, hint: "staged outbound", tone: "bg-violet-400" },
-          { label: "Critical priority", value: totals.critical, hint: "across the board", tone: "bg-red-400" },
-        ].map((row) => (
-          <div key={row.label} className="relative overflow-hidden rounded-panel border border-line bg-ink-750/70 px-3.5 py-3">
-            <span className={cn("absolute left-0 top-0 h-px w-full opacity-70", row.tone)} />
-            <div className="micro-label">{row.label}</div>
-            <div className="mt-1 data-value text-[22px]">{fmtNumber(row.value)}</div>
-            <div className="text-[10.5px] text-slate-600">{row.hint}</div>
-          </div>
-        ))}
+          {[
+            { label: "In transit", value: totals.moving, hint: "on terminal trucks", tone: "bg-signal-cyan" },
+            { label: "Stored", value: totals.yard, hint: "yard / warehouse", tone: "bg-amber-400" },
+            { label: "Ready to dispatch", value: totals.ready, hint: "staged outbound", tone: "bg-violet-400" },
+            { label: "Critical priority", value: totals.critical, hint: "across the board", tone: "bg-red-400" },
+          ].map((row) => (
+            <div key={row.label} className="relative overflow-hidden rounded-panel border border-line bg-ink-750/70 px-3.5 py-3">
+              <span className={cn("absolute left-0 top-0 h-px w-full opacity-70", row.tone)} />
+              <div className="micro-label">{row.label}</div>
+              <div className="mt-1 data-value text-[22px]">{fmtNumber(row.value)}</div>
+              <div className="text-[10.5px] text-slate-600">{row.hint}</div>
+            </div>
+          ))}
         </div>
 
         {board.isLoading ? (
-        <div className="flex gap-3 overflow-hidden">
-          {CONTAINER_COLUMNS.map((column) => <Skeleton key={column.status} className="h-[420px] min-w-[240px] flex-1" />)}
-        </div>
-      ) : board.isError ? (
-        <InlineNote tone="critical">Could not load the container board — {board.error?.message}</InlineNote>
-      ) : (
-        <div className="flex gap-3 overflow-x-auto pb-2 scroll-thin">
-          {CONTAINER_COLUMNS.map((column) => {
-            const data = board.data?.columns.find((row) => row.status === column.status);
-            return (
-              <div key={column.status} className="flex w-[248px] shrink-0 flex-col rounded-panel border border-line bg-ink-800/50">
-                <div className="border-b border-line px-3 py-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="flex items-center gap-1.5">
-                      <span className={cn("h-1.5 w-1.5 rounded-full", column.accent)} />
-                      <span className="font-display text-[12px] font-medium text-slate-200">{column.label}</span>
-                    </span>
-                    <span className="rounded bg-ink-700 px-1.5 py-px font-mono text-3xs tabular-nums text-slate-400">{data?.count ?? 0}</span>
-                  </div>
-                  <p className="mt-0.5 text-[10px] text-slate-600">{column.hint}</p>
-                </div>
-                <div className="flex-1 space-y-1.5 p-1.5">
-                  {!data?.items.length ? (
-                    <div className="flex h-24 items-center justify-center rounded border border-dashed border-line/70 text-[10.5px] text-slate-600">Empty</div>
-                  ) : (
-                    data.items.map((container) => (
-                      <ContainerCard
-                        key={container.code}
-                        container={container}
-                        active={selected === container.code}
-                        onOpen={() => setSelected(container.code)}
-                      />
-                    ))
-                  )}
-                </div>
-                {data && data.count > data.items.length ? (
-                  <div className="border-t border-line px-3 py-1.5 text-center font-mono text-3xs text-slate-600">+{data.count - data.items.length} more in column</div>
-                ) : null}
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 rounded-lg" />
+            ))}
+          </div>
+        ) : board.isError ? (
+          <InlineNote tone="critical">Could not load the container board — {board.error?.message}</InlineNote>
+        ) : viewMode === "grid" ? (
+          /* Responsive Multi-Container Grid Layout */
+          <div className="space-y-4">
+            {allContainers.length === 0 ? (
+              <div className="flex h-36 items-center justify-center rounded-panel border border-dashed border-line text-xs text-slate-500">
+                No containers match the selected filters.
               </div>
-            );
-          })}
-        </div>
-      )}
+            ) : (
+              <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
+                {allContainers.map((container) => (
+                  <ContainerCard
+                    key={container.code}
+                    container={container}
+                    active={selected === container.code}
+                    onOpen={() => setSelected(container.code)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        ) : (
+          /* Kanban Column Board View */
+          <div className="flex gap-3 overflow-x-auto pb-2 scroll-thin">
+            {CONTAINER_COLUMNS.map((column) => {
+              const data = board.data?.columns.find((row) => row.status === column.status);
+              return (
+                <div key={column.status} className="flex w-[260px] shrink-0 flex-col rounded-panel border border-line bg-ink-800/50">
+                  <div className="border-b border-line px-3 py-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <span className={cn("h-1.5 w-1.5 rounded-full", column.accent)} />
+                        <span className="font-display text-[12px] font-medium text-slate-200">{column.label}</span>
+                      </span>
+                      <span className="rounded bg-ink-700 px-1.5 py-px font-mono text-3xs tabular-nums text-slate-400">{data?.count ?? 0}</span>
+                    </div>
+                    <p className="mt-0.5 text-[10px] text-slate-600">{column.hint}</p>
+                  </div>
+                  <div className="flex-1 space-y-1.5 p-1.5">
+                    {!data?.items.length ? (
+                      <div className="flex h-20 items-center justify-center rounded border border-dashed border-line/70 text-[10.5px] text-slate-600">Empty</div>
+                    ) : (
+                      data.items.map((container) => (
+                        <ContainerCard
+                          key={container.code}
+                          container={container}
+                          active={selected === container.code}
+                          onOpen={() => setSelected(container.code)}
+                        />
+                      ))
+                    )}
+                  </div>
+                  {data && data.count > data.items.length ? (
+                    <div className="border-t border-line px-3 py-1.5 text-center font-mono text-3xs text-slate-600">+{data.count - data.items.length} more in column</div>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        )}
 
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <p className="font-mono text-3xs uppercase tracking-[0.06em] text-slate-600">
-          {board.data?.truncated ? "Board truncated at 500 containers — use filters to narrow." : "Showing all matching containers."}
-        </p>
-        <p className="flex items-center gap-1.5 text-[10.5px] text-slate-600">
-          <WarehouseIcon size={12} /> Delivered requires a completed dispatch manifest.
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-line/60 pt-2">
+          <p className="font-mono text-3xs uppercase tracking-[0.06em] text-slate-600">
+            {board.data?.truncated ? "Board truncated at 500 containers — use filters to narrow." : `Showing ${allContainers.length} matching container boxes.`}
+          </p>
+          <p className="flex items-center gap-1.5 text-[10.5px] text-slate-600">
+            <WarehouseIcon size={12} /> Delivered requires a completed dispatch manifest.
+          </p>
         </div>
       </WorkspaceSplit>
     </div>
@@ -426,30 +515,69 @@ function ContainerCard({ container, active, onOpen }: { container: Container; ac
       type="button"
       onClick={onOpen}
       className={cn(
-        "group w-full rounded border px-2.5 py-2 text-left transition-colors",
+        "group flex h-[108px] min-h-[108px] max-h-[108px] w-full flex-col justify-between rounded-lg border p-2.5 text-left transition-all duration-150",
         active
-          ? "border-cyan-400/40 bg-cyan-400/[0.06] ring-1 ring-cyan-400/25"
-          : "border-line bg-ink-850/80 hover:border-line-strong hover:bg-ink-750",
+          ? "border-cyan-400/50 bg-cyan-400/[0.08] shadow-[0_0_12px_-4px_rgba(34,211,238,0.4)] ring-1 ring-cyan-400/30"
+          : "border-line bg-ink-850/90 hover:border-line-strong hover:bg-ink-750/90 shadow-sm",
       )}
     >
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-mono text-[11px] text-slate-200">{container.code}</span>
-        <span className={cn("font-mono text-3xs uppercase tracking-[0.06em]", PRIORITY_STYLE[container.priority])}>{container.priority}</span>
+      {/* Header: Code + Status Badge + Priority */}
+      <div className="flex items-center justify-between gap-1 min-w-0">
+        <span className="truncate font-mono text-[11.5px] font-semibold text-slate-100 group-hover:text-cyan-300 min-w-0">
+          {container.code}
+        </span>
+        <div className="flex shrink-0 items-center gap-1 max-w-[60%]">
+          <span
+            className={cn(
+              "truncate rounded border px-1 py-px font-mono text-[9px] uppercase tracking-wide max-w-[80px]",
+              CONTAINER_STATUS_STYLE[container.status] ?? "border-slate-500/30 text-slate-400",
+            )}
+            title={container.status.replace(/_/g, " ")}
+          >
+            {container.status.replace(/_/g, " ")}
+          </span>
+          <span
+            className={cn(
+              "shrink-0 whitespace-nowrap rounded px-1 py-px font-mono text-[9px] uppercase tracking-tight font-semibold",
+              PRIORITY_STYLE[container.priority] ?? "text-slate-400",
+            )}
+          >
+            {container.priority}
+          </span>
+        </div>
       </div>
-      <div className="mt-1 flex items-center gap-1.5 text-[10.5px] text-slate-500">
-        <ContainerIcon size={10} />
+
+      {/* Cargo & Specs */}
+      <div className="flex items-center gap-1.5 text-[10.5px] text-slate-400">
+        <ContainerIcon size={11} className="shrink-0 text-slate-500" />
         <span className="capitalize">{container.cargo_type}</span>
-        <span className="text-slate-700">·</span>
-        <span>{container.weight_t} t</span>
-        {container.ship_code ? <><span className="text-slate-700">·</span><span className="font-mono">{container.ship_code}</span></> : null}
+        <span className="text-slate-600">·</span>
+        <span className="font-mono text-[10px]">{container.weight_t}t</span>
+        {container.ship_code ? (
+          <>
+            <span className="text-slate-600">·</span>
+            <span className="truncate font-mono text-[10px] text-slate-300">{container.ship_code}</span>
+          </>
+        ) : null}
       </div>
-      <div className="mt-1.5 truncate text-[10.5px] text-slate-500">{container.location}</div>
-      <div className="mt-1.5 flex items-center justify-between border-t border-line/60 pt-1.5">
-        <span className="truncate font-mono text-3xs text-slate-600">{container.destination}</span>
+
+      {/* Location */}
+      <div className="flex items-center gap-1 text-[10px] text-slate-400">
+        <MapPin size={10} className="shrink-0 text-slate-500" />
+        <span className="truncate">{container.location || "Terminal Yard"}</span>
+      </div>
+
+      {/* Footer: Destination + Action / Wait Indicator */}
+      <div className="flex items-center justify-between border-t border-line/50 pt-1 text-3xs">
+        <span className="truncate font-mono text-slate-500" title={container.destination}>
+          → {container.destination}
+        </span>
         {container.waiting_hours != null && container.waiting_hours > 12 ? (
-          <span className="font-mono text-3xs text-amber-400/80">{fmtNumber(container.waiting_hours, 0)}h wait</span>
+          <span className="shrink-0 font-mono text-amber-400/90">{fmtNumber(container.waiting_hours, 0)}h wait</span>
         ) : (
-          <span className="flex items-center gap-1 font-mono text-3xs text-slate-600 opacity-0 transition-opacity group-hover:opacity-100">Open <ArrowRight size={9} /></span>
+          <span className="flex shrink-0 items-center gap-0.5 font-mono text-slate-500 opacity-0 transition-opacity group-hover:opacity-100 group-hover:text-cyan-400">
+            Details <ArrowRight size={8} />
+          </span>
         )}
       </div>
     </button>

@@ -12,6 +12,7 @@ import { useAuth } from "@/lib/auth";
 import { cn, fmtAgo } from "@/lib/format";
 import { useTheme } from "@/lib/theme";
 import { SEVERITY_STYLE } from "@/lib/status";
+import { ROLE_LABELS } from "@/lib/rbac";
 import { Badge, Button } from "@/components/ui/primitives";
 import { DropdownContent, DropdownItem, DropdownLabel, DropdownMenu, DropdownSeparator, DropdownTrigger } from "@/components/ui/dropdown";
 import { Dialog, DialogContent, DialogFooter } from "@/components/ui/dialog";
@@ -27,6 +28,7 @@ const PAGE_TITLES: Record<string, { section: string; title: string }> = {
   "/app/simulations": { section: "Intelligence", title: "Simulation centre" },
   "/app/alerts": { section: "Intelligence", title: "Alerts & maintenance" },
   "/app/analytics": { section: "Intelligence", title: "Operational analytics" },
+  "/app/system": { section: "Administration", title: "System configuration & roles" },
 };
 
 function GlobalSearch() {
@@ -166,6 +168,8 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
     }
   };
 
+  const roleTitle = ROLE_LABELS[user?.role ?? ""] ?? user?.role ?? "Supervisor";
+
   return (
     <header className="sticky top-0 z-20 flex h-[60px] items-center justify-between gap-3 border-b border-line bg-ink-900/85 px-4 backdrop-blur-md lg:px-6">
       <div className="flex min-w-0 items-center gap-3">
@@ -269,7 +273,7 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
               <span className="hidden leading-tight sm:block">
                 <span className="block text-[11.5px] font-medium text-slate-200">{user?.name ?? info?.current_user?.name ?? "Operator"}</span>
                 <span className="block font-mono text-3xs uppercase tracking-[0.08em] text-slate-500">
-                  {readOnly ? "Read-only viewer" : user?.role ?? "supervisor"}
+                  {readOnly ? "Read-only viewer" : roleTitle}
                 </span>
               </span>
               <ChevronDown size={12} className="text-slate-500" />
@@ -284,12 +288,18 @@ export function Topbar({ onMenu }: { onMenu: () => void }) {
               </div>
               <div className="mt-1 flex items-center gap-2 text-[11px] text-slate-500">
                 <ShieldCheck size={12} />
-                {readOnly ? "Read-only viewer · server enforced" : "Operator access · audited"}
+                {readOnly ? "Read-only viewer · server enforced" : `${roleTitle} access · audited`}
               </div>
             </div>
             <DropdownSeparator />
             <DropdownItem onSelect={() => navigate("/app/analytics")}>Open analytics</DropdownItem>
-            {!readOnly ? (
+            {user?.role === "super_admin" ? (
+              <DropdownItem onSelect={() => navigate("/app/system")}>
+                <ShieldCheck size={13} />
+                System & role management
+              </DropdownItem>
+            ) : null}
+            {user?.role === "super_admin" ? (
               <DropdownItem onSelect={() => setResetOpen(true)} danger>
                 <RefreshCw size={13} />
                 Reset demo dataset

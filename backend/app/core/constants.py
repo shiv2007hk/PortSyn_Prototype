@@ -22,7 +22,29 @@ ALERT_SEVERITIES = ["critical", "warning", "info"]
 ALERT_STATUSES = ["active", "acknowledged", "resolved"]
 PRIORITIES = ["low", "normal", "high", "critical"]
 MAINTENANCE_STATUSES = ["scheduled", "in_progress", "completed"]
-ROLES = ["operator", "supervisor"]
+ROLES = [
+    "super_admin",
+    "port_administrator",
+    "port_operator",
+    "fleet_manager",
+    "warehouse_manager",
+    "maintenance_manager",
+    "supervisor",
+    "operator",
+    "viewer",
+]
+
+DEMO_USERS = [
+    {"code": "USR-SA", "name": "Vikram Malhotra", "role": "super_admin", "email": "admin@portsync.demo"},
+    {"code": "USR-PA", "name": "Sunita Rao", "role": "port_administrator", "email": "portadmin@portsync.demo"},
+    {"code": "USR-PO", "name": "Karan Shah", "role": "port_operator", "email": "operator@portsync.demo"},
+    {"code": "USR-FM", "name": "Rajesh Kumar", "role": "fleet_manager", "email": "fleet@portsync.demo"},
+    {"code": "USR-WM", "name": "Meera Patel", "role": "warehouse_manager", "email": "warehouse@portsync.demo"},
+    {"code": "USR-MM", "name": "David Chen", "role": "maintenance_manager", "email": "maintenance@portsync.demo"},
+    # Legacy demo users preserved
+    {"code": "USR-01", "name": "Priya Menon", "role": "supervisor", "email": "priya.menon@portsync.demo"},
+    {"code": "USR-02", "name": "Arjun Rao", "role": "operator", "email": "arjun.rao@portsync.demo"},
+]
 
 CONTAINER_TRANSITIONS = {
     "waiting": ["allocated"],

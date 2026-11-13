@@ -10,6 +10,7 @@ from app.core.constants import (
     CRANE_SLOTS,
     DEFAULT_HEALTH_WEIGHTS,
     DEFAULT_RESOURCE_WEIGHTS,
+    DEMO_USERS,
 )
 from app.core.security import hash_password
 from app.core.timeutil import utcnow
@@ -118,16 +119,16 @@ def seed(db: Session) -> None:
     now = utcnow()
 
     if settings.seed_demo_users:
-        existing_users = {user.code: user for user in db.query(User).all()}
-        for spec in (
-            {"code": "USR-01", "name": "Priya Menon", "role": "supervisor", "email": "priya.menon@portsync.demo"},
-            {"code": "USR-02", "name": "Arjun Rao", "role": "operator", "email": "arjun.rao@portsync.demo"},
-        ):
-            user = existing_users.get(spec["code"])
+        existing_users = {user.email.lower(): user for user in db.query(User).all()}
+        for spec in DEMO_USERS:
+            user = existing_users.get(spec["email"].lower())
             if user is None:
                 db.add(User(**spec, password_hash=hash_password(settings.demo_password)))
-            elif not user.password_hash:
-                user.password_hash = hash_password(settings.demo_password)
+            else:
+                user.role = spec["role"]
+                user.name = spec["name"]
+                if not user.password_hash:
+                    user.password_hash = hash_password(settings.demo_password)
 
     docks = [
         Dock(code="D1", name="Berth Alpha", capacity_teu=1200, max_length_m=320, max_draft_m=14.0,
@@ -526,13 +527,17 @@ def seed(db: Session) -> None:
 def ensure_demo_credentials(db: Session) -> None:
     if not settings.seed_demo_users:
         return
-    changed = False
-    for user in db.query(User).all():
-        if not user.password_hash:
-            user.password_hash = hash_password(settings.demo_password)
-            changed = True
-    if changed:
-        db.commit()
+    existing_users = {user.email.lower(): user for user in db.query(User).all()}
+    for spec in DEMO_USERS:
+        user = existing_users.get(spec["email"].lower())
+        if user is None:
+            db.add(User(**spec, password_hash=hash_password(settings.demo_password)))
+        else:
+            user.role = spec["role"]
+            user.name = spec["name"]
+            if not user.password_hash:
+                user.password_hash = hash_password(settings.demo_password)
+    db.commit()
 
 
 def seed_if_empty(db: Session) -> bool:

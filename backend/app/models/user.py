@@ -10,7 +10,7 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     code = Column(String(16), unique=True, nullable=False)
     name = Column(String(100), nullable=False)
-    role = Column(String(20), nullable=False, default="operator")
+    role = Column(String(32), nullable=False, default="port_operator")
     email = Column(String(120), unique=True, nullable=False, index=True)
     password_hash = Column(String(200), nullable=True)
     created_at = Column(DateTime, default=utcnow, nullable=False)
