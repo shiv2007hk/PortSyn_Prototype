@@ -65,7 +65,7 @@ def test_signup_is_read_only_and_logout_invalidates_session(client):
         assert client.get("/api/dashboard").status_code == 200
         blocked = client.post("/api/system/reset-demo", json={"confirm": "RESET"})
         assert blocked.status_code == 403
-        assert "read-only" in blocked.json()["detail"].lower()
+        assert "not authorized" in blocked.json()["detail"].lower()
 
         logout = client.post("/api/auth/logout")
         assert logout.status_code == 200
